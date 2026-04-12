@@ -10,8 +10,8 @@ date: 2026-03-23
 
 **Audio version:**
 <audio controls style="width: 100%; max-width: 600px;">
-  <source src="/entries/001-dude-wheres-my-team/dude-wheres-my-team.mp3" type="audio/mpeg">
-  Your browser does not support the audio element. <a href="/entries/001-dude-wheres-my-team/dude-wheres-my-team.mp3">Download the audio file</a>.
+  <source src="dude-wheres-my-team.mp3" type="audio/mpeg">
+  Your browser does not support the audio element. <a href="dude-wheres-my-team.mp3">Download the audio file</a>.
 </audio>
 
 ---

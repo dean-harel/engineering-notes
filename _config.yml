@@ -3,6 +3,7 @@ title: "Engineering Notes"
 description: "Practical notes on optimizing AI workflows"
 author: "Dean Harel"
 email: ""
+baseurl: "/engineering-notes"
 
 # Build settings
 theme: minima

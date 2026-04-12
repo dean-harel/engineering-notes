@@ -10,8 +10,8 @@ date: 2026-04-06
 
 **Audio version:**
 <audio controls style="width: 100%; max-width: 600px;">
-  <source src="/entries/002-ic-dead-people/ic-dead-people.mp3" type="audio/mpeg">
-  Your browser does not support the audio element. <a href="/entries/002-ic-dead-people/ic-dead-people.mp3">Download the audio file</a>.
+  <source src="ic-dead-people.mp3" type="audio/mpeg">
+  Your browser does not support the audio element. <a href="ic-dead-people.mp3">Download the audio file</a>.
 </audio>
 
 ---

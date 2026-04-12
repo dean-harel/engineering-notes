@@ -335,8 +335,8 @@ jobs:
             cat >> "${ENTRY_DIR}/index.md" << AUDIO_EOF
           **Audio version:**
           <audio controls style="width: 100%; max-width: 600px;">
-            <source src="/entries/${NUMBER}-${SLUG}/${SLUG}.mp3" type="audio/mpeg">
-            Your browser does not support the audio element. <a href="/entries/${NUMBER}-${SLUG}/${SLUG}.mp3">Download the audio file</a>.
+            <source src="${SLUG}.mp3" type="audio/mpeg">
+            Your browser does not support the audio element. <a href="${SLUG}.mp3">Download the audio file</a>.
           </audio>
 
           AUDIO_EOF
