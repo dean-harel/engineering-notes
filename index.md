@@ -14,7 +14,7 @@ title: Home
 {% assign parts = entry.path | split: "/" %}
 {% if parts.size == 3 %}
 
-- [{{ entry.title | default: entry.name }}]({{ entry.url }}) — _{{ entry.date | date: "%b %-d, %Y" }} · {{ entry.reading_time | default: "~3 min" }}_
+- [{{ entry.title | default: entry.name }}]({{ site.baseurl }}{{ entry.url }}) — _{{ entry.date | date: "%b %-d, %Y" }} · {{ entry.reading_time | default: "~3 min" }}_
   {% endif %}
   {% endif %}
   {% endfor %}
