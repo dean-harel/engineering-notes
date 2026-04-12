@@ -1,0 +1,10 @@
+[default]
+extend-ignore-re = []
+
+[default.extend-words]
+# Add custom words here (brand names, domain terms)
+wheres = "wheres"
+Hashi = "Hashi"
+
+[files]
+extend-exclude = []

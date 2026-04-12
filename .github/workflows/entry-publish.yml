@@ -1,0 +1,451 @@
+name: Entry Publish
+
+on:
+  pull_request:
+    types: [labeled, synchronize]
+
+concurrency:
+  group: publish-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Publish Entry
+    if: github.event.label.name == 'ready' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Check branch is up to date with main
+        id: uptodate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git fetch origin main --depth=1
+          if ! git merge-base --is-ancestor origin/main HEAD; then
+            gh pr comment "${{ github.event.pull_request.number }}" \
+              --body "⚠️ This branch is not up to date with \`main\`. Please update your branch and re-apply the \`ready\` label."
+            exit 1
+          fi
+
+      - name: Detect mode (first publish vs retrigger)
+        id: mode
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DRAFTS=$(find entries/drafts -name "*.md" ! -name "README.md" 2>/dev/null)
+          COUNT=$(echo "$DRAFTS" | grep -c . || true)
+
+          if [ "$COUNT" -gt 1 ]; then
+            gh pr comment "${{ github.event.pull_request.number }}" \
+              --body "❌ Found multiple draft files in \`entries/drafts/\`. Only one draft per PR is allowed."
+            exit 1
+          fi
+
+          if [ "$COUNT" -eq 1 ]; then
+            echo "mode=first-publish" >> "$GITHUB_OUTPUT"
+            echo "draft_file=$DRAFTS" >> "$GITHUB_OUTPUT"
+          else
+            # No draft — look for the entry folder changed in this PR
+            EXISTING=$(git diff --name-only origin/main...HEAD -- 'entries/[0-9][0-9][0-9]-*/' | head -1 | xargs -I{} dirname {} 2>/dev/null)
+            # Fallback: find highest-numbered entry
+            if [ -z "$EXISTING" ]; then
+              EXISTING=$(find entries -maxdepth 1 -type d -name '[0-9][0-9][0-9]-*' 2>/dev/null | sort -r | head -1)
+            fi
+            if [ -n "$EXISTING" ] && [ -f "$EXISTING/body.md" ]; then
+              echo "mode=retrigger" >> "$GITHUB_OUTPUT"
+              echo "entry_dir=$EXISTING" >> "$GITHUB_OUTPUT"
+            else
+              gh pr comment "${{ github.event.pull_request.number }}" \
+                --body "❌ No draft file and no existing entry found."
+              exit 1
+            fi
+          fi
+
+      - name: Extract title and body
+        id: content
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MODE="${{ steps.mode.outputs.mode }}"
+          AUTHOR=$(python3 -c "import yaml; print(yaml.safe_load(open('entry.yml'))['author'])")
+          echo "author=$AUTHOR" >> "$GITHUB_OUTPUT"
+
+          if [ "$MODE" = "first-publish" ]; then
+            DRAFT="${{ steps.mode.outputs.draft_file }}"
+
+            # Extract first H1
+            TITLE=$(grep -m1 '^# ' "$DRAFT" | sed 's/^# //')
+            if [ -z "$TITLE" ]; then
+              gh pr comment "${{ github.event.pull_request.number }}" \
+                --body "❌ No H1 heading found in the draft. Please add a title line starting with \`# \`."
+              exit 1
+            fi
+
+            echo "title=$TITLE" >> "$GITHUB_OUTPUT"
+
+            # Extract body (everything after first H1)
+            BODY_FILE=$(mktemp)
+            sed '0,/^# /d' "$DRAFT" | sed '/^$/N;/^\n$/d' > "$BODY_FILE"
+            echo "body_file=$BODY_FILE" >> "$GITHUB_OUTPUT"
+
+          else
+            # Retrigger mode — read from existing entry
+            ENTRY_DIR="${{ steps.mode.outputs.entry_dir }}"
+
+            # Read title from frontmatter
+            TITLE=$(sed -n 's/^title: "\(.*\)"/\1/p' "$ENTRY_DIR/index.md")
+            echo "title=$TITLE" >> "$GITHUB_OUTPUT"
+
+            # Body file is body.md
+            echo "body_file=$ENTRY_DIR/body.md" >> "$GITHUB_OUTPUT"
+          fi
+
+          # Calculate reading time from body
+          if [ "$MODE" = "first-publish" ]; then
+            WORD_COUNT=$(cat "$BODY_FILE" | sed 's/<[^>]*>//g' | wc -w | tr -d ' ')
+          else
+            WORD_COUNT=$(cat "$ENTRY_DIR/body.md" | sed 's/<[^>]*>//g' | wc -w | tr -d ' ')
+          fi
+          READING_TIME=$(python3 -c "import math; print(max(1, math.ceil(${WORD_COUNT:-0} / 200)))")
+          echo "reading_time=$READING_TIME" >> "$GITHUB_OUTPUT"
+
+      - name: Generate slug
+        id: slug
+        run: |
+          MODE="${{ steps.mode.outputs.mode }}"
+          if [ "$MODE" = "retrigger" ]; then
+            # Extract slug from existing folder name (NNN-slug)
+            ENTRY_DIR="${{ steps.mode.outputs.entry_dir }}"
+            SLUG=$(basename "$ENTRY_DIR" | sed 's/^[0-9]*-//')
+          else
+            SLUG=$(echo "${{ steps.content.outputs.title }}" | \
+              tr '[:upper:]' '[:lower:]' | \
+              tr ' _' '-' | \
+              sed 's/[^a-z0-9-]//g' | \
+              sed 's/--*/-/g' | \
+              sed 's/^-//;s/-$//' | \
+              cut -c1-60 | \
+              sed 's/-$//')
+          fi
+          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
+
+      - name: Assign entry number
+        id: number
+        run: |
+          MODE="${{ steps.mode.outputs.mode }}"
+          if [ "$MODE" = "retrigger" ]; then
+            # Extract number from existing folder name
+            ENTRY_DIR="${{ steps.mode.outputs.entry_dir }}"
+            NEXT=$(basename "$ENTRY_DIR" | grep -oP '^\d{3}')
+          else
+            # Scan main for highest entry number
+            HIGHEST=$(git ls-tree origin/main entries/ --name-only | \
+              grep -oP '\d{3}(?=-)' | sort -n | tail -1)
+            HIGHEST=${HIGHEST:-000}
+            # Remove leading zeros for arithmetic
+            HIGHEST_NUM=$((10#$HIGHEST))
+            NEXT_NUM=$((HIGHEST_NUM + 1))
+            NEXT=$(printf "%03d" "$NEXT_NUM")
+          fi
+          echo "number=$NEXT" >> "$GITHUB_OUTPUT"
+
+      - name: Slug-based idempotency check
+        if: steps.mode.outputs.mode == 'first-publish'
+        id: idempotency
+        run: |
+          SLUG="${{ steps.slug.outputs.slug }}"
+          NUMBER="${{ steps.number.outputs.number }}"
+
+          # Search for existing folder with this slug on the branch
+          EXISTING=$(find entries -maxdepth 1 -type d -name "*-${SLUG}" 2>/dev/null | head -1)
+
+          if [ -n "$EXISTING" ]; then
+            EXISTING_NUM=$(basename "$EXISTING" | grep -oP '^\d{3}')
+            if [ "$EXISTING_NUM" != "$NUMBER" ]; then
+              echo "Stale folder detected: $EXISTING (expected ${NUMBER}). Removing."
+              rm -rf "$EXISTING"
+              # Also clean stale index entry
+              sed -i "/\/${SLUG}\//d" README.md
+            fi
+          fi
+
+      - name: Save body.md
+        if: steps.mode.outputs.mode == 'first-publish'
+        run: |
+          SLUG="${{ steps.slug.outputs.slug }}"
+          NUMBER="${{ steps.number.outputs.number }}"
+          ENTRY_DIR="entries/${NUMBER}-${SLUG}"
+          mkdir -p "$ENTRY_DIR"
+          cp "${{ steps.content.outputs.body_file }}" "$ENTRY_DIR/body.md"
+
+      - name: Generate speech.md (hash-cached)
+        id: speech
+        run: |
+          SLUG="${{ steps.slug.outputs.slug }}"
+          NUMBER="${{ steps.number.outputs.number }}"
+          ENTRY_DIR="entries/${NUMBER}-${SLUG}"
+          mkdir -p "$ENTRY_DIR"
+
+          # Compute hash of body.md
+          BODY_HASH=$(sha256sum "$ENTRY_DIR/body.md" | cut -d' ' -f1)
+
+          # Check if speech.md needs regeneration
+          NEEDS_REGEN="false"
+          if [ ! -f "$ENTRY_DIR/speech.md" ]; then
+            echo "speech.md missing — generating."
+            NEEDS_REGEN="true"
+          elif [ ! -f "$ENTRY_DIR/.speech-hash" ]; then
+            echo "No .speech-hash — generating speech.md."
+            NEEDS_REGEN="true"
+          elif [ "$(cat "$ENTRY_DIR/.speech-hash")" != "$BODY_HASH" ]; then
+            echo "body.md changed — regenerating speech.md."
+            NEEDS_REGEN="true"
+          else
+            echo "body.md unchanged — skipping speech.md generation."
+          fi
+
+          if [ "$NEEDS_REGEN" = "true" ]; then
+            # Strip markdown/HTML from body.md for TTS
+            python3 -c "import re; text = open('$ENTRY_DIR/body.md').read(); text = re.sub(r'<[^>]+>', '', text); text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text); text = re.sub(r'\*{1,3}([^*]+)\*{1,3}', r'\1', text); text = re.sub(r'_{1,3}([^_]+)_{1,3}', r'\1', text); text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE); text = re.sub(r'\x60([^\x60]+)\x60', r'\1', text); text = re.sub(r'\n{3,}', '\n\n', text); print(text.strip())" > "$ENTRY_DIR/speech.md"
+
+            # Write hash
+            echo "$BODY_HASH" > "$ENTRY_DIR/.speech-hash"
+          fi
+
+          echo "speech_file=$ENTRY_DIR/speech.md" >> "$GITHUB_OUTPUT"
+
+      - name: Generate audio (hash-cached)
+        id: audio
+        continue-on-error: true
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: |
+          SLUG="${{ steps.slug.outputs.slug }}"
+          NUMBER="${{ steps.number.outputs.number }}"
+          ENTRY_DIR="entries/${NUMBER}-${SLUG}"
+          mkdir -p "$ENTRY_DIR"
+
+          # Read voice/model from defaults in entry.yml
+          VOICE_ID=$(python3 -c "import yaml; print(yaml.safe_load(open('entry.yml'))['voice'])")
+          MODEL_ID=$(python3 -c "import yaml; print(yaml.safe_load(open('entry.yml'))['model'])")
+
+          echo "voice_id=$VOICE_ID" >> "$GITHUB_OUTPUT"
+          echo "model_id=$MODEL_ID" >> "$GITHUB_OUTPUT"
+
+          # Compute audio hash: speech.md content + voice ID + model ID
+          AUDIO_HASH=$(cat "$ENTRY_DIR/speech.md" <(echo "$VOICE_ID") <(echo "$MODEL_ID") | sha256sum | cut -d' ' -f1)
+
+          # Check if audio needs regeneration
+          NEEDS_REGEN="false"
+          if [ ! -f "$ENTRY_DIR/${SLUG}.mp3" ]; then
+            echo "MP3 missing — generating."
+            NEEDS_REGEN="true"
+          elif [ ! -f "$ENTRY_DIR/.audio-hash" ]; then
+            echo "No .audio-hash — generating audio."
+            NEEDS_REGEN="true"
+          elif [ "$(cat "$ENTRY_DIR/.audio-hash")" != "$AUDIO_HASH" ]; then
+            echo "Audio inputs changed — regenerating."
+            NEEDS_REGEN="true"
+          else
+            echo "Audio inputs unchanged — skipping generation."
+            echo "audio_ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ "$NEEDS_REGEN" = "true" ]; then
+            # Call ElevenLabs TTS API
+            HTTP_CODE=$(curl -s -o "${ENTRY_DIR}/${SLUG}.mp3" -w "%{http_code}" \
+              -X POST "https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}" \
+              -H "xi-api-key: ${ELEVENLABS_API_KEY}" \
+              -H "Content-Type: application/json" \
+              -d "$(jq -n --arg text "$(cat "$ENTRY_DIR/speech.md")" --arg model "$MODEL_ID" '{text: $text, model_id: $model, enable_ssml_parsing: true}')")
+
+            if [ "$HTTP_CODE" != "200" ]; then
+              echo "audio_error=Audio failed: ElevenLabs returned HTTP $HTTP_CODE" >> "$GITHUB_OUTPUT"
+              rm -f "${ENTRY_DIR}/${SLUG}.mp3"
+              echo "audio_ok=false" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
+
+            # Verify MP3 is valid
+            if [ -f "${ENTRY_DIR}/${SLUG}.mp3" ] && file "${ENTRY_DIR}/${SLUG}.mp3" | grep -q "Audio\|MPEG"; then
+              echo "audio_ok=true" >> "$GITHUB_OUTPUT"
+              echo "$AUDIO_HASH" > "$ENTRY_DIR/.audio-hash"
+            else
+              rm -f "${ENTRY_DIR}/${SLUG}.mp3"
+              echo "audio_ok=false" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
+          fi
+
+      - name: Create entry page
+        run: |
+          TITLE="${{ steps.content.outputs.title }}"
+          SLUG="${{ steps.slug.outputs.slug }}"
+          NUMBER="${{ steps.number.outputs.number }}"
+          READING_TIME="${{ steps.content.outputs.reading_time }}"
+          AUTHOR="${{ steps.content.outputs.author }}"
+          ENTRY_DIR="entries/${NUMBER}-${SLUG}"
+          AUDIO_OK="${{ steps.audio.outputs.audio_ok }}"
+
+          # On retrigger, preserve existing date; on first publish, set today
+          EXISTING_DATE=$(sed -n 's/^date: \(.*\)/\1/p' "$ENTRY_DIR/index.md" 2>/dev/null || true)
+          if [ -n "$EXISTING_DATE" ]; then
+            PUBLISH_DATE="$EXISTING_DATE"
+            PUBLISH_DATE_DISPLAY=$(date -d "$EXISTING_DATE" +"%b %-d, %Y" 2>/dev/null || date -j -f "%Y-%m-%d" "$EXISTING_DATE" +"%b %-d, %Y" 2>/dev/null || echo "$EXISTING_DATE")
+          else
+            PUBLISH_DATE=$(date +%Y-%m-%d)
+            PUBLISH_DATE_DISPLAY=$(date +"%b %-d, %Y")
+          fi
+
+          # Check if MP3 exists (either just generated or from previous run)
+          MP3_EXISTS="false"
+          if [ -f "${ENTRY_DIR}/${SLUG}.mp3" ]; then
+            MP3_EXISTS="true"
+          fi
+
+          mkdir -p "$ENTRY_DIR"
+
+          # Always regenerate index.md from current state
+          cat > "${ENTRY_DIR}/index.md" << ENTRY_EOF
+          ---
+          title: "${TITLE}"
+          layout: post
+          reading_time: "~${READING_TIME} min"
+          author: "${AUTHOR}"
+          date: ${PUBLISH_DATE}
+          ---
+
+          **Date:** ${PUBLISH_DATE_DISPLAY} · **Reading time:** ~${READING_TIME} min
+
+          ENTRY_EOF
+
+          # Strip leading whitespace from heredoc
+          sed -i 's/^          //' "${ENTRY_DIR}/index.md"
+
+          # Add audio player if MP3 exists
+          if [ "$MP3_EXISTS" = "true" ]; then
+            cat >> "${ENTRY_DIR}/index.md" << AUDIO_EOF
+          **Audio version:**
+          <audio controls style="width: 100%; max-width: 600px;">
+            <source src="/entries/${NUMBER}-${SLUG}/${SLUG}.mp3" type="audio/mpeg">
+            Your browser does not support the audio element. <a href="/entries/${NUMBER}-${SLUG}/${SLUG}.mp3">Download the audio file</a>.
+          </audio>
+
+          AUDIO_EOF
+            sed -i 's/^          //' "${ENTRY_DIR}/index.md"
+          fi
+
+          # Add divider and body from body.md
+          echo "---" >> "${ENTRY_DIR}/index.md"
+          echo "" >> "${ENTRY_DIR}/index.md"
+          cat "${ENTRY_DIR}/body.md" >> "${ENTRY_DIR}/index.md"
+
+      - name: Update README index
+        if: steps.mode.outputs.mode == 'first-publish'
+        run: |
+          TITLE="${{ steps.content.outputs.title }}"
+          SLUG="${{ steps.slug.outputs.slug }}"
+          NUMBER="${{ steps.number.outputs.number }}"
+          READING_TIME="${{ steps.content.outputs.reading_time }}"
+          PUBLISH_DATE_DISPLAY=$(date +"%b %-d, %Y")
+
+          # Check if slug already in index (idempotency)
+          if grep -q "/${SLUG}/" README.md; then
+            echo "Entry already in index, skipping."
+          else
+            # Count existing entries to get the list number
+            ENTRY_NUM=$(grep -cP '^\d+\.' README.md || true)
+            ENTRY_NUM=$((ENTRY_NUM + 1))
+
+            # Append new entry to end of file
+            echo "${ENTRY_NUM}. [${TITLE}](./entries/${NUMBER}-${SLUG}/) — _${PUBLISH_DATE_DISPLAY} · ~${READING_TIME} min_" >> README.md
+          fi
+
+      - name: Delete draft
+        if: steps.mode.outputs.mode == 'first-publish'
+        run: |
+          rm "${{ steps.mode.outputs.draft_file }}"
+
+      - name: Post audio failure comment
+        if: steps.audio.outputs.audio_ok != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ERROR="${{ steps.audio.outputs.audio_error }}"
+          MSG="${ERROR:-Audio generation failed.}"
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --body "⚠️ ${MSG} Remove and re-add \`ready\` to retry."
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "feat: publish entry ${{ steps.number.outputs.number }}-${{ steps.slug.outputs.slug }}"
+            git push
+          fi
+
+  staleness-check:
+    name: Staleness Check
+    if: github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'ready')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Check for stale artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          STALE="false"
+
+          # Find entry folder
+          ENTRY_DIR=$(find entries -maxdepth 1 -type d -name '[0-9][0-9][0-9]-*' 2>/dev/null | head -1)
+          if [ -z "$ENTRY_DIR" ]; then
+            echo "No entry folder found — nothing to check."
+            exit 0
+          fi
+
+          # Check speech hash
+          if [ -f "$ENTRY_DIR/body.md" ] && [ -f "$ENTRY_DIR/.speech-hash" ]; then
+            CURRENT=$(sha256sum "$ENTRY_DIR/body.md" | cut -d' ' -f1)
+            STORED=$(cat "$ENTRY_DIR/.speech-hash")
+            if [ "$CURRENT" != "$STORED" ]; then
+              echo "body.md changed since last speech generation."
+              STALE="true"
+            fi
+          fi
+
+          # Check audio hash
+          if [ -f "$ENTRY_DIR/speech.md" ] && [ -f "$ENTRY_DIR/.audio-hash" ]; then
+            VOICE_ID=$(python3 -c "import yaml; print(yaml.safe_load(open('entry.yml'))['voice'])")
+            MODEL_ID=$(python3 -c "import yaml; print(yaml.safe_load(open('entry.yml'))['model'])")
+            CURRENT=$(cat "$ENTRY_DIR/speech.md" <(echo "$VOICE_ID") <(echo "$MODEL_ID") | sha256sum | cut -d' ' -f1)
+            STORED=$(cat "$ENTRY_DIR/.audio-hash")
+            if [ "$CURRENT" != "$STORED" ]; then
+              echo "Audio inputs changed since last generation."
+              STALE="true"
+            fi
+          fi
+
+          if [ "$STALE" = "true" ]; then
+            gh pr comment "${{ github.event.pull_request.number }}" \
+              --body "⚠️ Pipeline artifacts are stale. Remove and re-add \`ready\` to regenerate."
+          else
+            echo "All artifacts up to date."
+          fi

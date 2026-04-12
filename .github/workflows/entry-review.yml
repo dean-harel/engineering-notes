@@ -1,0 +1,60 @@
+name: Entry Review
+
+on:
+  pull_request:
+    paths:
+      - "entries/drafts/**"
+
+jobs:
+  spellcheck:
+    name: Spellcheck
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run typos
+        uses: crate-ci/typos@master
+        with:
+          config: typos.toml
+
+  ai-review:
+    name: AI Review
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: AI grammar and clarity review
+        uses: anthropics/claude-code-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review the draft entry files in entries/drafts/ (excluding README.md).
+            Flag grammar errors, typos the spellchecker missed, and unclear sentences.
+            Do NOT suggest style or tone changes. The author's voice should be preserved.
+
+  summary:
+    name: Review Summary
+    needs: [spellcheck, ai-review]
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post clean summary
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '✅ All review checks passed. When you\'re ready, apply the `ready` label to publish.'
+            });

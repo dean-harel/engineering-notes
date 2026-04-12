@@ -1,0 +1,61 @@
+# Site settings
+title: "Engineering Notes"
+description: "Practical notes on optimizing AI workflows"
+author: "Dean Harel"
+email: ""
+
+# Build settings
+theme: minima
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Permalink structure for clean URLs
+permalink: /:categories/:title/
+
+# Collections for organizing entries
+collections:
+  entries:
+    output: true
+    permalink: /entries/:name/
+
+# Default front matter
+defaults:
+  - scope:
+      path: "entries"
+      type: "entries"
+    values:
+      layout: "post"
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: "post"
+
+# Exclude files from Jekyll processing
+exclude:
+  - .DS_Store
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - entries/drafts
+  - "entries/*/body.md"
+  - "entries/*/speech.md"
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+
+# Navigation
+header_pages:
+  - index.md
+  - about.md
+
+# Show excerpts on home page
+show_excerpts: true
+
+# Date format
+date_format: "%B %-d, %Y"
