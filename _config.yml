@@ -1,6 +1,6 @@
 # Site settings
 title: "Engineering Notes"
-description: "Practical notes on optimizing AI workflows"
+description: "Practical notes on engineering"
 author: "Dean Harel"
 email: ""
 baseurl: "/engineering-notes"
