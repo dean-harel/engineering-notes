@@ -1,29 +1,25 @@
 ---
 name: entry
-description: Use when creating engineering notes entries — manages the research → draft → publish workflow with conversational state transitions
+description: Use when creating, drafting, or publishing engineering notes entries — provides conversational workflow managing research, drafting, folding, and publishing with automatic state tracking. Activate this whenever you're helping someone write an engineering note, from rough idea through publication.
 ---
 
-# Entry Meta-Skill
+# Entry Skill
 
-Manage the research → draft → publish lifecycle for engineering-notes entries. Each command is one conversational cycle: detect state, prompt for input, update files, show next steps.
+Manage the research → draft → publish lifecycle for engineering-notes entries. Each command is one conversational cycle: detect state, prompt for input, update files, show next steps. Respects manual edits. Follows the voice guide at `.claude/rules/voice.md`.
 
 ## Quick Reference
 
 **Create new entry:**
-
 ```
 /entry "Your rough idea here"
 ```
-
 Creates `entries/wip/<ULID>-<slug>/research.md`, prompts for initial research input.
 
 **Resume or continue:**
-
 ```
 /entry <ulid>
 ```
-
-Detects current state, shows options, responds to your choice. Just tell the skill what you want to do next.
+Detects current state, shows options, responds to your choice.
 
 ## Entry States
 
@@ -35,60 +31,42 @@ STATE 2: Research + Draft
   └─ User can: iterate research, iterate draft, fold research→draft, or publish
 ```
 
-## Interaction Model
+## Interaction Cycle
 
 Each cycle follows the same pattern:
 
-1. **User inputs command** → `/entry "idea"` or `/entry <ulid>`
-2. **Skill creates/detects state** → folder, files, content
-3. **Skill prompts for input** → "What's your rough idea?" or "What next?" or "What would you like to revise?"
-4. **User responds** (as text, not a command)
-5. **Skill processes** → updates file
-6. **Skill shows result** → preview, confirmation
-7. **Skill prompts again** → "What next?"
-8. **Loop returns to step 4**
+1. User inputs command `/entry "idea"` or `/entry <ulid>`
+2. Skill creates/detects state → folder, files, content
+3. Skill prompts for input → "What's your rough idea?" or "What next?"
+4. User responds (as text, not a command)
+5. Skill processes → updates file
+6. Skill shows result → preview, confirmation
+7. Skill prompts again → "What next?"
+8. Loop returns to step 4
 
 ## Commands
 
 ### `/entry "Your rough idea"`
 
-**Action:**
-
-1. Extract slug from idea (slugify to kebab-case)
-2. Generate 4-char ULID
-3. Create folder: `entries/wip/<ULID>-<slug>/`
-4. Create scaffold: `research.md` with template sections
-5. Prompt: "What's your rough idea? (Can be rough, exploratory notes work fine)"
+Extract slug from idea, generate 4-char ULID, create `entries/wip/<ULID>-<slug>/research.md` with template sections.
 
 **What user sees:**
-
 ```
 ✔ Created abc1
 Entry: abc1-how-to-approach-code-review
 
 ● research ─── draft
 
-Now, what's your rough idea?
+What's your rough idea?
 ```
 
-**User responds with:** Their thoughts on the topic
-
-**Skill then:**
-
-1. Appends to research.md under "Rough Idea"
-2. Shows state (research only)
-3. Prompts: "What would you like to do next?"
+User responds with thoughts → Skill appends to research.md under "Rough Idea" → Shows state → "What next?"
 
 ### `/entry <ulid>`
 
-**Action:**
+Detect state (research exists? draft exists?), show content preview (first 100 words of each), prompt for next action.
 
-1. Detect state (research exists? draft exists?)
-2. Show content preview (first 100 words of each)
-3. Prompt: "What would you like to do next?"
-
-**What user sees:**
-
+**What user sees (research stage):**
 ```
 📋 Entry: abc1 (how-to-approach-code-review)
 
@@ -96,192 +74,66 @@ Now, what's your rough idea?
 
 "During code review, teams often spend time on..."
 
-What would you like to do next?
+What next?
 ```
 
-Or if at draft stage:
-
-```
-📋 Entry: abc1 (how-to-approach-code-review)
-
-research ─── ● draft
-
-[draft content preview]
-
-What would you like to do next?
-```
-
-**User responds with one of:**
-
-- "add more research" → Skill prompts for research input
-- "move to draft" → Skill asks for title, creates draft.md
-- "work on draft" → Skill shows current draft, prompts for revisions
-- "fold research into draft" → Skill shows research, prompts for integration
-- "publish" → Skill validates H1, promotes to entries/drafts/
-- (or freeform intent like "I want to explore X more" → Skill interprets and routes)
-
-**Skill then:**
-
-1. Prompts for input if needed
-2. Updates files
-3. Shows result
-4. Loops back to "What next?"
+User can respond with:
+- "add more research" → prompts for research input
+- "move to draft" → asks for title, creates draft.md
+- "work on draft" → shows draft excerpt, prompts for revisions
+- "fold research into draft" → shows research, guides integration
+- "publish" → validates H1, promotes to entries/drafts/
+- Freeform intent → skill interprets and routes
 
 ## Per-Action Behavior
 
 **Add Research:** Prompt "What would you like to add or explore?" → Append to research.md
 
 **Move to Draft:**
-
-- Prompt: "Do you have a title? (or I can add it later)"
-- User: "Yes, it's 'Code Review Best Practices'" → Create draft.md with H1 pre-filled
-- User: "Not yet" → Create draft.md with `# [Add your title here]` placeholder
-- Loop back: "What next?"
+- Prompt: "Do you have a title?"
+- If yes: Create draft.md with H1 pre-filled
+- If no: Create draft.md with `# [Add your title here]` placeholder
 
 **Work on Draft:**
-
 - Show current draft excerpt
 - Prompt: "What would you like to revise or add?"
-- User responds with revision or new content
-- Update draft.md
-- Loop back: "What next?"
+- User responds → Skill updates draft.md
 
 **Fold Research → Draft:**
-
 - Show research.md excerpt
-- Prompt: "How should these findings inform your draft? (which section to update, add new section, etc?)"
-- User: "Update the opening to include the blameless culture concept"
-- Update draft.md (modify opening section)
-- Loop back: "What next?"
+- Prompt: "How should these findings inform your draft?"
+- User specifies section or area → Skill updates draft.md
 
 **Publish:**
-
 - Check H1 in draft.md
-  - If missing: Show draft, prompt "What's your entry title?"
-  - User provides: Update draft.md, proceed
+  - If missing: Show draft, prompt "What's your entry title?", user provides, skill updates
   - If present: Continue
-- Validate no other drafts queued in entries/drafts/
-- Extract title, create slug, copy draft.md → entries/drafts/{title}.md
+- Validate content present
+- Extract title, create slug, copy to `entries/drafts/{title}.md`
 - Show: "✔ Promoted to entries/drafts/{title}.md"
-- Show: "Next: Open PR, wait for review, add 'ready' label"
-- Show: "Research notes saved at entries/wip/{ulid}-{slug}/research.md"
+- Show: "Next: Open PR, add 'ready' label"
 
-## Example Workflows
+## File Structure
 
-**Workflow 1: Quick idea → draft → publish**
+Entries live in `entries/wip/<ULID>-<slug>/`:
+- `research.md` — Exploration, notes, references
+- `draft.md` — Entry with H1 title + body
 
-```
-/entry "How to review code faster"
-Skill: "What's your rough idea?"
-You: "When reviewing PRs, teams waste time on style issues. Could be automated."
-Skill: [Updates research.md] "What next?"
-You: "move to draft"
-Skill: "Do you have a title?"
-You: "Automating style checks in code review"
-Skill: [Creates draft.md] "What next?"
-You: "I'll add the body now"
-[You edit draft.md in your editor or say what to add]
-Skill: [Updates draft.md] "What next?"
-You: "publish"
-Skill: [Validates, promotes] "✔ Promoted to entries/drafts/..."
-```
+See `templates/scaffolds.md` for initial file templates.
 
-**Workflow 2: Deep research → draft with folding**
+## Templates, Examples, and Edge Cases
 
-```
-/entry "Code review optimization"
-Skill: "What's your rough idea?"
-You: [Initial thoughts]
-Skill: "What next?"
-You: "add more research"
-Skill: "What would you like to explore?"
-You: "[Reference to article on blameless culture]"
-Skill: [Appends to research.md] "What next?"
-You: "move to draft"
-Skill: [Creates draft.md] "What next?"
-You: "work on draft"
-Skill: "What would you like to add?"
-You: "[Write opening paragraph]"
-Skill: [Updates draft.md] "What next?"
-You: "fold research into draft"
-Skill: [Shows research excerpt] "How should these inform your draft?"
-You: "Add the blameless culture concept to the opening"
-Skill: [Updates draft opening] "What next?"
-You: "publish"
-Skill: [Validates, promotes] "✔ Done"
-```
+- **File templates:** See `templates/scaffolds.md`
+- **Example workflows:** See `examples/workflows.md`
+- **Edge case handling:** See `faqs/edge-cases.md`
 
-## Implementation Details
+## Implementation Notes
 
-**Folder structure:**
+**Slug generation:** Lowercase → split on spaces → join with hyphens → remove specials  
+**ULID:** 4 random alphanumeric characters (a-z, 0-9). Ensures uniqueness even if slugs collide.
 
-```
-entries/wip/
-  abc1-my-rough-idea/
-    research.md          # Exploration, notes, references
-    draft.md            # Entry with H1 title + body
-```
+**Voice alignment:** Follow `.claude/rules/voice.md`. The skill guides toward the voice guide; if something doesn't match, mention it. Don't block—guide.
 
-**Slug generation:**
+**Manual edits:** Skill always reads current file state. Manual edits are respected. Next invocation sees them.
 
-- Input: "How to approach code review faster"
-- Slugify: lowercase → split on spaces → join with hyphens → remove specials
-- Result: `how-to-approach-code-review-faster`
-
-**ULID generation:**
-
-- 4 random alphanumeric characters (a-z, 0-9)
-- Ensures uniqueness even if slugs collide
-
-**File scaffolds:**
-
-research.md template:
-
-```markdown
-# Research: [Your Topic]
-
-## Rough Idea
-
-[Your initial thoughts go here]
-
-## References & Sources
-
-- [Links and citations]
-
-## Observations
-
-[Insights as you explore]
-```
-
-draft.md template (when title provided):
-
-```markdown
-# Your Title Here
-
-[Your entry body]
-```
-
-draft.md template (when title deferred):
-
-```markdown
-# [Add your title here]
-
-[Your entry body]
-```
-
-## Edge Cases
-
-**Q: What if draft.md already exists when user tries to create new entry?**
-A: Don't create duplicate. Say "This entry already exists. Run `/entry abc1` to resume it."
-
-**Q: Can user have multiple entries in progress?**
-A: Yes — each gets a unique ULID. `/entry abc1`, `/entry xyz9`, etc.
-
-**Q: What if user edits the files manually while also using the skill?**
-A: The skill reads the current state. Manual edits are respected. Next skill invocation will see them.
-
-**Q: Can user change title after draft creation?**
-A: Yes — edit the H1 in draft.md manually, or iterate draft with skill. Skill uses current H1 on publish.
-
-**Q: What if publish fails (e.g., no H1)?**
-A: Show what's needed, offer to fix it right then. Don't abort — guide them to completion.
+**Error recovery:** All errors are recoverable. Show the problem, show what's needed, offer immediate fix path. No abort.
