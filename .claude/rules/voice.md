@@ -1,56 +1,161 @@
 ---
 paths:
-  - "entries/drafts/**"
-  - "entries/*/body.md"
-  - "entries/*/speech.md"
+  - entries/drafts/**
+  - entries/*/body.md
 ---
 
 # Writing Voice
 
-Before writing or editing any entry content, follow this guide.
+A style guide for practical notes on engineering. This is the reference for how writing an entry sounds. Use this as a framework for the distinctive voice: who you are (Voice & Tone), who you're writing for (Audience), and how to structure ideas (Structure).
+
+---
+
+## Voice & Tone
+
+**Formality:** Semi-formal with conversational swagger. The register is _opinionated intellectual_.
+
+**Authority:** Earned through specific observation, not declared credentials. Demonstrate expertise through the quality of detail and the connections drawn.
+
+**Relatability:** Assumes technical literacy and shared context. Direct address to readers who will follow the thread without hand-holding.
+
+**Grounded in lived experience:** Observations should feel grounded in actual work, not detached commentary. Begin from specific moments or scenes. First-person grounding even when pivoting to general points.
+
+**Trust the reader:** Don't spell things out. Don't explain references, metaphors, or technical terms. Let them connect the dots or look it up.
+
+**Multi-Disciplinary:** Draw from philosophy, literature, film, psychology, sociology, etymology. Bring adjacent fields into the conversation with ease and specificity.
+
+**Ironic:** The gap between what's said and what's meant. Things don't resolve neatly. The writing holds contradiction without collapsing it.
+
+**Humor:** Three flavors in rotation:
+
+1. **Word play** — etymological, lexical surprises, precise language used unexpectedly
+2. **Sarcastic and stingy** — dry, understated, lets the reader feel the bite
+3. **Witty** — juxtaposition that lands fast, wit as insight
+
+**Democratic and Polemic:** Challenge assumptions and take positions. Respect reader intelligence enough to argue rather than persuade.
+
+**Aphoristic:** Self-contained observations. Each point should be able to stand alone. The entry finds its own form—points can juxtapose rather than build sequentially.
+
+**Perspective:** Shifts between "I" (personal observation) and "we" (shared industry experience) as needed. The voice is both singular and collective.
+
+**Anti-Patterns:**
+
+- Motivational framing or selling a future
+- Medium post, conference talk, or LinkedIn thought-leader tone
+- Sentences that make you cringe — if it doesn't pass the wince test, cut it
+
+---
+
+## Audience
+
+**Technically versed** — Readers with technical depth who understand engineering culture and practice in this era.
+
+**Curious and investigative** — Notes for those who dig deeper. Readers who follow crumbs, look up references, and want to understand the full picture. The barrier to entry is fine.
+
+**Shared context** — Readers who follow industry developments, current events, prior art. Don't explain what's already common knowledge.
+
+**References bridge the gaps** — References act as bridges for readers who want to go deeper on any point. Outside disciplines are accessible to this audience without preamble.
+
+**Anti-Patterns:**
+
+- Over-explaining to lower barriers to entry
+- Glossing technical terms
+- Context-setting that sounds like a conference talk
+
+---
 
 ## Structure
 
-There is no fixed structure. Each entry finds its own form. Use horizontal rules (`---`) as scene cuts to control pacing. End open — leave the reader with a question or tension, never a neat takeaway.
+Entries find their own form. There's no rigid structure—an entry can be a flowing essay, numbered list, fragments, or hybrid. Each finds its own shape.
 
-## Tone
+### Sentence Construction
 
-- Written from experience — observations should feel grounded in lived work, not detached commentary
-- Shifts between "I" (personal observation) and "we" (shared industry experience) as needed
-- Draws from other disciplines — philosophy, literature, film, psychology, sociology, etymology
-- Sarcastic and playful, while staying sharp
-- Humor through juxtaposition — pair two things that don't belong together to land a point ("human-in-the-loop / human-in-the-audience," "a hundred years / a hundred prompts," "harness engineering / just calls it a Tuesday")
+**Vary length deliberately.** Short for punch. Medium for observation. Long for development. Fragments can be used as a technique, providing rhythem.
 
-## Style
+**Three-part structures (and five-part) build momentum.** Extensible enumeration—think in groups of 3 or 5.
 
-- Trust the reader — don't state the obvious, don't spell out the metaphor, don't explain the reference. Let them connect the dots.
-- Light but loaded — sentences should flow easy but still pack a punch. Give the reader room to breathe.
-- Be quotable — every entry should have sentences strong enough to stand on their own.
-- Avoid cringe — if a sentence makes you wince, kill it.
-- No throat-clearing — get to the point, earn attention with the opening line.
+**Two-sentence pattern: setup → turn/landing.**
 
-## Research
+**Light but loaded** — Sentences flow easy but pack a punch. Give the reader room to breathe while densifying meaning.
 
-- Every entry should be grounded in references — articles, books, talks, prior art
-- Draw from the field and outside it
-- Not every point needs a citation — aphorisms and observations can stand on their own — but the entry as a whole should be well-sourced
+**Quotability** — Sentences should resonate enough to stand alone. This comes from specificity and precision in word choice.
+
+**Begin from specific moments, not abstract claims.**
+
+**Grounded detail.** Every observation should be named, not described. Numbers, names, artifacts. If an observation could apply to anything, it's not specific enough.
+
+**Anti-Patterns:**
+
+- Uniform sentence length throughout
+- Abstract observations that could apply to anything
+- Explaining or describing instead of naming the specific thing
+- Hedging or qualifying observations
+- Filler reassurance phrases ("Believe me," "Trust me," "I know what I'm talking about")
+
+### Rhythm, Pacing & Transitions
+
+**Alternates between fast and slow.** Short punchy sentences for urgency; longer reflective passages for breathing room.
+
+**Horizontal rules (`---`) for scene cuts.** Major thematic shifts, not every transition. These are pause points that signal a change in angle.
+
+**Causal connectives within sections.** "But," "And," "So" as sentence starters feel like natural speech rhythms.
+
+**Contrast as transition.**
+
+- _The team didn't come along for the ride. The agent did._
+- _That's not an engineering practice. That's a management expectation wearing a hoodie._
+
+**Callback motifs for coherence.** Opening image can return at the end (ring composition).
+
+**Single-word paragraphs as pacing.** A single word or very short sentence can land as emphasis, creating a speed bump or punch.
+
+**Cross-point coherence.** Points can reference each other (etymologically, thematically, conceptually). Non-linear connections are encouraged—readers trace the relationships.
+
+### Punctuation and Word Habits
+
+**Repeated motifs and word habits** — recurring imagery, word choices, patterns that create consistency and resonance.
+
+**Anti-Patterns:**
+
+- Em-dashes
+
+### Entry Boundaries
+
+**Opening:** Earn attention immediately. The opening should disarm—open with a scene, reference, rhetorical question, or sharp observation. No throat-clearing. The first line sets the register and pulls the reader in.
+
+**Closing:** End on tension or question, never neat resolution. Leave the reader with something unresolved, something to think through. Open endings invite readers to complete the thinking themselves—this aligns with a democratic approach where the reader is a participant, not a passive receiver.
+
+**Anti-Patterns:**
+
+- Reassuring or resolving tension
+- Neat conclusions or summaries
+
+### Grounding and References
+
+**Entries should be well-sourced.** Draw from articles, books, talks, prior art across disciplines.
+
+**References weave naturally.** Not every point needs a citation. Aphorisms and observations can stand alone, but the entry as a whole should feel researched.
+
+**References act as bridges** for readers who want to dig deeper on any point.
+
+**Embedded inline format.** References are woven into the text with brackets `[reference]` rather than displayed as footnotes or trailing links. The format keeps the reader in the flow.
+
+**Anti-Patterns:**
+
+- Citations on every point
+- Footnotes or trailing link lists instead of embedded format
+- Over-citing known or obvious facts
+
+---
 
 ## Constraints
 
-- Under 10 minutes read, aiming for around 5
+**Reading time:** Target up to 5 minutes, absolute max 10 minutes.
 
-## Reference passages
+**Scope:** Short engineering notes, not long-form essays or tutorials.
 
-> "That's not a tool. That's a team you raised."
+**Title format:** Sentence case.
 
-> "We call it human-in-the-loop, but it's closer to human-in-the-audience."
+**Audio-friendly:** Content should be clear and distinct when read aloud (for optional TTS version).
 
-> "Knowing the trick doesn't make you immune to it. The magician explains the illusion and you still flinch."
-
-## Anti-patterns
-
-- This is not a Medium post, a conference talk, or a LinkedIn thought-leader post
-- This voice observes, it doesn't motivate
-- It doesn't generalize — it names the specific thing
-- It doesn't reassure — it sits with the discomfort
-- It doesn't sell a future — it questions the present
+**Standalone:** Each entry is complete on its own; no series requirements.
