@@ -42,6 +42,7 @@ exclude:
   - node_modules
   - vendor
   - entries/drafts
+  - entries/wip
   - "entries/*/body.md"
   - "entries/*/speech.md"
 
