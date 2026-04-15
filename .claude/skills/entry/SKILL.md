@@ -157,14 +157,6 @@ Entries live in `entries/wip/<ULID>-<slug>/`:
 
 **Manual edits:** Skill always reads current file state. Manual edits are respected. Next invocation sees them.
 
-**Error recovery:** All errors are recoverable. Show the problem, show what's needed, offer immediate fix path. No abort.
+**Error recovery:** All errors are recoverable. Show the problem clearly, show what's needed, offer immediate fix path inline. No abort — continue workflow to keep user in flow.
 
 **State display:** Every interaction cycle shows current state (which artifacts exist + preview) before presenting options. This grounds the user in "where am I" before deciding "what next".
-
-**Error recovery pattern:** When validation fails (missing H1, no content, etc.):
-1. Detect the issue (file state, missing content)
-2. Show the problem clearly ("No H1 title found" not "promote failed")
-3. Offer immediate fix inline ("What's your entry title?") not "try again later"
-4. Continue workflow (no abort, no restart needed)
-
-This keeps the user in flow and prevents frustration.
