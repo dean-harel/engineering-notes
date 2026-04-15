@@ -1,6 +1,6 @@
 ---
 name: entry
-description: Use when creating, drafting, or promoting engineering notes entries — provides conversational workflow managing research, drafting, integrating findings, and promoting with automatic state tracking. Activate this whenever you're helping someone write an engineering note, from rough idea through public promotion.
+description: Use when researching or drafting engineering notes entries through a conversational workflow with automatic state tracking. Activate this whenever you're helping someone write an engineering note, from rough idea through a draft ready to be promoted to an entry.
 ---
 
 # Entry Skill
@@ -15,7 +15,7 @@ Manage the research → draft → promote lifecycle for engineering-notes entrie
 /entry "Your rough idea here"
 ```
 
-Creates `entries/wip/<ULID>-<slug>/research.md`, shows current state, prompts for initial research input.
+Creates `entries/wip/<ULID>-<slug>/research.md` with Rough Idea prefilled, shows current state, presents options to revise.
 
 **Resume or continue:**
 
@@ -31,10 +31,10 @@ The skill's job is to show current state and present next options based on which
 
 ```
 STATE 1: Research only (research.md exists, no draft.md)
-  └─ Options: iterate research, or move to draft
+  └─ Options: revise research, or move to draft
 
 STATE 2: Research + Draft (both exist)
-  └─ Options: iterate research, iterate draft, integrate research→draft, or promote
+  └─ Options: revise research, revise draft, integrate research→draft, or promote
 ```
 
 **Research input comes from 2 sources:**
@@ -51,7 +51,7 @@ Each cycle follows the same pattern:
 1. User inputs command `/entry "idea"` or `/entry <ulid>`
 2. Skill creates/detects state → folder, files, content
 3. Skill shows current state → "● research" (with preview) or "● research ─── ● draft"
-4. Skill presents options based on artifacts → "You can: add research, move to draft, work on draft, integrate research, or promote"
+4. Skill presents options based on artifacts → "You can: revise research, move to draft, revise draft, integrate research, or promote"
 5. User responds with choice (as text, not a command)
 6. Skill processes → updates file based on choice
 7. Skill shows result → preview, confirmation
@@ -71,10 +71,10 @@ Entry: abc1-how-to-approach-code-review
 
 ● research ─── draft
 
-You can: add research, move to draft
+You can: revise research, move to draft
 ```
 
-User responds with choice (add research, move to draft) → Skill processes → Shows updated state → Presents options again
+User responds with choice (revise research, move to draft) → Skill processes → Shows updated state → Presents options again
 
 ### `/entry <ulid>`
 
@@ -89,7 +89,7 @@ Detect state (research exists? draft exists?), show content preview (first 100 w
 
 "During code review, teams often spend time on..."
 
-You can: add research, move to draft
+You can: revise research, move to draft
 ```
 
 **What user sees (research + draft stage):**
@@ -102,15 +102,15 @@ You can: add research, move to draft
 Research: "During code review, teams often spend time on..."
 Draft: "# Optimizing Code Review\n\nCode reviews are critical..."
 
-You can: add research, work on draft, integrate research, promote
+You can: revise research, revise draft, integrate research, promote
 ```
 
 User responds with choice → Skill processes → Shows updated state
 
 ## Per-Action Behavior
 
-**Add Research:**  
-Prompt "What would you like to add or explore?" → Append to research.md
+**Revise Research:**  
+Prompt "What would you like to revise or explore?" → Append to research.md
 
 **Move to Draft:**
 
@@ -118,7 +118,7 @@ Prompt "What would you like to add or explore?" → Append to research.md
 - If yes: Create draft.md with H1 pre-filled
 - If no: Create draft.md with `# [Add your title here]` placeholder
 
-**Work on Draft:**
+**Revise Draft:**
 
 - Show current draft excerpt
 - Prompt: "What would you like to revise or add?"
