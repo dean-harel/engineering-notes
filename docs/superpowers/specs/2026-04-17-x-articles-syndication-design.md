@@ -49,24 +49,26 @@ Destination artifacts are outputs of a completed entry. They depend only on `bod
 
 ```
 1. Save body.md
-2. Generate speech.md        ← body.md projection; hash-cached
-3. Generate audio            ← speech.md projection; hash-cached
-4. Create index.md
-5. Update README index
-6. Generate destination artifacts  ← body.md projections; triggered by body.md change
-7. Commit and push
+2. Check body hash           ← exports body_changed
+3. Generate speech.md        ← body.md projection; runs if body_changed
+4. Generate audio            ← speech.md projection; hash-cached
+5. Create index.md
+6. Update README index
+7. Generate destination artifacts  ← body.md projections; runs if body_changed
+8. Commit and push
 ```
 
 The destination step runs at the end, after the core entry is fully formed (title, slug, number, URL all resolved). This keeps the core pipeline untouched when new destinations are added.
 
 ### Trigger condition
 
-Destination artifacts share the same trigger as `speech.md`: regenerate when `body.md` changes, skip otherwise. The pipeline reuses the `NEEDS_REGEN` output from the speech step — no separate hash file for destinations.
+A dedicated **"Check body hash"** step computes the body.md hash, compares it to `.speech-hash`, and exports `body_changed`. Both `speech.md` and destination artifacts consume this signal independently — neither is coupled to the other.
 
 ```
-body.md changed?
-  yes → regenerate speech.md + all destination artifacts
-  no  → skip both
+Check body hash → body_changed
+  ├── Generate speech.md           (if body_changed)
+  ├── Generate audio               (if speech inputs changed)
+  └── Generate destination artifacts  (if body_changed)
 ```
 
 ---
@@ -123,7 +125,7 @@ New step in `entry-publish.yml` — "Generate destination artifacts" — after "
 
 ```yaml
 - name: Generate destination artifacts
-  if: steps.speech.outputs.needs_regen == 'true'
+  if: steps.body_hash.outputs.body_changed == 'true'
   run: |
     X_ARTICLES=$(python3 -c "import yaml; d = yaml.safe_load(open('entry.yml')).get('destinations', {}); print(d.get('x_articles', False))")
     if [ "$X_ARTICLES" = "True" ]; then
@@ -163,7 +165,7 @@ Current entries to backfill: `001-dude-wheres-my-team`, `002-ic-dead-people`, `0
 | `entry.yml` | Add `destinations.x_articles: true` |
 | `_config.yml` | Add `"entries/*/x-article.html"` to exclude list |
 | `scripts/generate_x_article.py` | New — already written and tested |
-| `.github/workflows/entry-publish.yml` | Add destination artifacts step; export `needs_regen` from speech step |
+| `.github/workflows/entry-publish.yml` | Add body hash step (exports `body_changed`); update speech step to consume it; add destination artifacts step |
 | `entries/001-*/x-article.html` | Backfill |
 | `entries/002-*/x-article.html` | Backfill |
 | `entries/003-*/x-article.html` | Backfill |
