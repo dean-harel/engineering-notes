@@ -2,8 +2,6 @@ name: Entry Review
 
 on:
   pull_request:
-    paths:
-      - "entries/drafts/**"
 
 jobs:
   spellcheck:
@@ -20,7 +18,7 @@ jobs:
 
   ai-review:
     name: AI Review
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]' && secrets.ANTHROPIC_API_KEY != ''
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -42,7 +40,7 @@ jobs:
   summary:
     name: Review Summary
     needs: [spellcheck, ai-review]
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]' && always()
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
