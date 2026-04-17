@@ -85,7 +85,7 @@ destinations:
   x_articles: true
 ```
 
-Adding a new channel in future (e.g., Substack) is: `substack: true` in config + `scripts/generate_substack.py`.
+Adding a new channel (e.g., Substack) is: `substack: true` in config + `scripts/generate_substack.py`. The pipeline never changes.
 
 ---
 
@@ -121,20 +121,24 @@ python3 scripts/generate_x_article.py --entry-dir entries/001-dude-wheres-my-tea
 
 ## Pipeline step
 
-New step in `entry-publish.yml` — "Generate destination artifacts" — after "Create entry page", before "Commit and push":
+New step in `entry-publish.yml` — "Generate destination artifacts" — after "Create entry page", before "Commit and push".
+
+Each destination is a function with a standard interface: `scripts/generate_{name}.py --entry-dir {path}`. The pipeline loop is generic — it reads enabled destinations from `entry.yml` and dispatches to the corresponding script by name. Adding a new destination never requires touching the pipeline.
 
 ```yaml
 - name: Generate destination artifacts
   if: steps.body_hash.outputs.body_changed == 'true'
   run: |
-    X_ARTICLES=$(python3 -c "import yaml; d = yaml.safe_load(open('entry.yml')).get('destinations', {}); print(d.get('x_articles', False))")
-    if [ "$X_ARTICLES" = "True" ]; then
-      python3 scripts/generate_x_article.py \
-        --entry-dir "entries/${{ steps.number.outputs.number }}-${{ steps.slug.outputs.slug }}"
-    fi
+    ENTRY_DIR="entries/${{ steps.number.outputs.number }}-${{ steps.slug.outputs.slug }}"
+    python3 -c "
+import yaml
+d = yaml.safe_load(open('entry.yml')).get('destinations', {})
+for name, enabled in d.items():
+    if enabled: print(name)
+" | while read dest; do
+      python3 "scripts/generate_${dest}.py" --entry-dir "$ENTRY_DIR"
+    done
 ```
-
-The speech step is updated to export `needs_regen` as a step output so the destination step can consume it.
 
 **PR comment** — posted when artifact is generated:
 ```
