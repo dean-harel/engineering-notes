@@ -109,6 +109,11 @@ python3 scripts/generate_x_article.py --entry-dir entries/001-dude-wheres-my-tea
 
 **Output:** `{entry-dir}/x-article.html`
 
+**Stdout:** One summary line consumed by the pipeline PR comment, e.g.:
+```
+X Articles: `entries/001-dude-wheres-my-team/x-article.html`
+```
+
 **Attribution footer:**
 ```html
 <p>· · ·</p>
@@ -125,19 +130,26 @@ New step in `entry-publish.yml` — "Generate destination artifacts" — after "
 
 Each destination is a function with a standard interface: `scripts/generate_{name}.py --entry-dir {path}`. The pipeline loop is generic — it reads enabled destinations from `entry.yml` and dispatches to the corresponding script by name. Adding a new destination never requires touching the pipeline.
 
+Each script prints a single summary line to stdout (e.g. `x_articles: entries/001-slug/x-article.html`). The loop collects these into a single PR comment.
+
 ```yaml
 - name: Generate destination artifacts
   if: steps.body_hash.outputs.body_changed == 'true'
+  env:
+    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   run: |
     ENTRY_DIR="entries/${{ steps.number.outputs.number }}-${{ steps.slug.outputs.slug }}"
-    python3 -c "
+    COMMENT="📄 Destination artifacts ready:\n"
+    while read dest; do
+      LINE=$(python3 "scripts/generate_${dest}.py" --entry-dir "$ENTRY_DIR")
+      COMMENT+="- ${LINE}\n"
+    done < <(python3 -c "
 import yaml
 d = yaml.safe_load(open('entry.yml')).get('destinations', {})
 for name, enabled in d.items():
     if enabled: print(name)
-" | while read dest; do
-      python3 "scripts/generate_${dest}.py" --entry-dir "$ENTRY_DIR"
-    done
+")
+    gh pr comment "${{ github.event.pull_request.number }}" --body "$(printf "$COMMENT")"
 ```
 
 **PR comment** — posted when artifact is generated:

@@ -69,7 +69,7 @@ def main():
 
     out_path = entry_dir / "x-article.html"
     out_path.write_text(html)
-    print(f"Written: {out_path}")
+    print(f"X Articles: `{out_path}`")
 
 
 if __name__ == "__main__":
