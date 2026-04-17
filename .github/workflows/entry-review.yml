@@ -18,7 +18,8 @@ jobs:
 
   ai-review:
     name: AI Review
-    if: github.actor != 'github-actions[bot]' && secrets.ANTHROPIC_API_KEY != ''
+    if: github.actor != 'github-actions[bot]'
+    continue-on-error: true
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -40,7 +41,7 @@ jobs:
   summary:
     name: Review Summary
     needs: [spellcheck, ai-review]
-    if: github.actor != 'github-actions[bot]' && always()
+    if: always() && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
