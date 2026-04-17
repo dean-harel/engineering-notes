@@ -1,5 +1,4 @@
-
-Remember that time when Elon Musk bought Twitter (now X) and promptly [asked engineers to print out their code](https://blog.pragmaticengineer.com/turmoil-at-twitter/)? Screenshots of their most salient lines; Then reportedly stack-ranked them by LOC written in the past year and cut the bottom tier (around 3,250 people)?
+Remember that time when Elon Musk bought Twitter (now X) and promptly [asked engineers to print out their code](https://blog.pragmaticengineer.com/turmoil-at-twitter/)? Screenshots of their most salient lines; Then reportedly stack-ranked them by LOC (Lines of Code) written in the past year and cut the bottom tier (around 3,250 people)?
 
 The response was immediate. Grady Booch, who co-invented UML, called it [evidence of Musk's "profound incompetence"](https://www.theregister.com/2022/11/14/musk_twitter_rpc_spat/) leading "an organization built around a software-intensive web-centric system." The consensus verdict: you use LOC when you don't understand what software is.
 
@@ -11,7 +10,7 @@ From brag posts to product decisions by the platform hosting most codebases, **t
 
 ---
 
-Well, it might be true we're using _that_ metric again, but it's different now. It isn't the same author, is it?
+Well, it might be true we're using _that_ metric again, but it's different this time. It isn't the same author, now is it?
 
 If agents do the execution — the lines, the syntax, the implementation — the [Drucker distinction](https://edbatista.com/2008/10/drucker-1.html) just might hold cleanly enough. Knowledge work is task definition, not output; the knowledge worker decides what to build, the manual worker builds it. Agents are tools. Measuring a tool's output by volume is what you do — machine throughput, widget production, PRs per week. The human orchestrating the swarm is the knowledge worker. The LOC is the machine's readout. Nothing wrong with counting that.
 
@@ -23,7 +22,7 @@ Except, wait. Didn't Karpathy say we're already past code? Software 3.0: English
 
 Back then, Dijkstra's word for the code that LOC incentivizes was "insipid." Not incorrect. Not inefficient. Insipid — tasteless, flat, without character. Not a technical word, but an _aesthetic_ one. And reviving LOC alongside not even noticing the double standard is exactly that - **tasteless**.
 
-Borrowing from another industry, fast fashion is producing so many clothes, so fast, that the sense of quality as a felt property quietly atrophies. The acceleration is the mechanism. Volume doesn't just lower standards; it numbs the instrument you'd use to notice. AI-generated code at scale is doing the same. Not producing bad code, necessarily. Producing enough code, fast enough, that taste — the faculty Dijkstra was invoking when he said "insipid" — starts to dissolve.
+What happens now can be framed by borrowing from another industry. Fast fashion is producing so many clothes, so fast, that the sense of quality as a felt property quietly atrophies. The acceleration is the mechanism. Volume doesn't just lower standards; it numbs the instrument you'd use to notice. AI-generated code at scale is exactly the same. Not producing bad code, necessarily. Producing enough code, fast enough, that taste — the faculty Dijkstra was invoking when he said "insipid" — starts to _dissolve_.
 
 In that respect the double standard doesn't require cynicism. It doesn't even require inattention. It just requires enough throughput that the instrument goes quiet — and then LOC starts to feel like a reasonable proxy, not because anyone decided it was, but because no one can quite feel the insipidity anymore.
 
