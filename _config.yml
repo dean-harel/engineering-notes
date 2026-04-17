@@ -45,6 +45,7 @@ exclude:
   - entries/wip
   - "entries/*/body.md"
   - "entries/*/speech.md"
+  - "entries/*/x-article.html"
 
 # Plugins
 plugins:

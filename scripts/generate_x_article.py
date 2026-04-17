@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.9"
+# dependencies = ["markdown>=3.0"]
+# ///
 """Generate an x-article.html artifact for a given entry directory.
 
 Usage:
@@ -10,6 +14,7 @@ to the entry directory.
 """
 
 import argparse
+import html
 import re
 import sys
 from pathlib import Path
@@ -39,7 +44,7 @@ def build_article(title: str, body_html: str, entry_url: str) -> str:
         f'<p><em>Originally published at '
         f'<a href="{entry_url}">Engineering Notes</a>.</em></p>'
     )
-    return f"""<h1>{title}</h1>
+    return f"""<h1>{html.escape(title)}</h1>
 
 {body_html}
 
@@ -69,7 +74,7 @@ def main():
 
     out_path = entry_dir / "x-article.html"
     out_path.write_text(html)
-    print(f"X Articles: `{out_path}`")
+    print(f"X Article: `{out_path}`")
 
 
 if __name__ == "__main__":
