@@ -2,8 +2,6 @@ name: Entry Review
 
 on:
   pull_request:
-    paths:
-      - "entries/drafts/**"
 
 jobs:
   spellcheck:
