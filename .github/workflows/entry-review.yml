@@ -15,6 +15,7 @@ jobs:
         uses: crate-ci/typos@master
         with:
           config: typos.toml
+          files: entries/drafts/
 
   ai-review:
     name: AI Review
