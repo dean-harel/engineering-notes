@@ -83,10 +83,12 @@ Entries should be well-sourced. Draw from articles, books, talks, prior art acro
 - Hedging or qualifying observations
 - Filler reassurance phrases
 - Em-dashes
+- Label-colon constructs ("Argument: ...", "The issue: ...", "Key insight: ...") — telegraphs instead of demonstrates; disrupts prose flow
 - Citations on every point
 - Footnotes or trailing link lists
 - Over-citing known or obvious facts
 - Neat conclusions or reassuring endings
+- Excessive use of direct quotes — paraphrase and synthesize; block quotes or long lifted passages break the voice
 
 ---
 

@@ -7,33 +7,24 @@ description: Use when researching or drafting engineering notes entries through 
 
 Manage the research → draft → promote lifecycle for engineering-notes entries. Each command is one conversational cycle: detect state, show current working state, present workflow options based on available artifacts. Respects manual edits.
 
-## Quick Reference
+## Artifacts
 
-**Create new entry:**
+Entries live in `entries/wip/<id>-<slug>/`. Each entry has up to two artifacts:
 
-```
-/entry "Your rough idea here"
-```
+- `research.md` — Exploration, notes, references (see `templates/research.md`)
+- `draft.md` — Entry with H1 title + body (see `templates/draft.md`)
 
-Creates `entries/wip/<ULID>-<slug>/research.md` with Rough Idea prefilled, shows current state, presents options to revise.
-
-**Resume or continue:**
-
-```
-/entry <ulid>
-```
-
-Detects current state, shows current working state, presents available options based on artifacts.
+All artifact filenames and paths are defined here. Other sections refer to them by name (research, draft).
 
 ## Entry Workflow States
 
 The skill's job is to show current state and present next options based on which artifacts exist.
 
 ```
-STATE 1: Research only (research.md exists, no draft.md)
+STATE 1: Research only
   └─ Options: revise research, or move to draft
 
-STATE 2: Research + Draft (both exist)
+STATE 2: Research + Draft
   └─ Options: revise research, revise draft, integrate research→draft, or promote
 ```
 
@@ -42,13 +33,13 @@ STATE 2: Research + Draft (both exist)
 1. User input (focus areas, ideas, direction)
 2. Deep search results (web research around focus areas + adjacent topics)
 
-Both feed into `research.md` as the working artifact during exploration.
+Both feed into the research artifact during exploration.
 
 ## Interaction Cycle
 
 Each cycle follows the same pattern:
 
-1. User inputs command `/entry "idea"` or `/entry <ulid>`
+1. User inputs command `/entry "idea"` or `/entry <id>`
 2. Skill creates/detects state → folder, files, content
 3. Skill shows current state → "● research" (with preview) or "● research ─── ● draft"
 4. Skill presents options based on artifacts → "You can: revise research, move to draft, revise draft, integrate research, or promote"
@@ -59,9 +50,26 @@ Each cycle follows the same pattern:
 
 ## Commands
 
+### `/entry` (no arguments)
+
+Glob `entries/wip/*/*` to find all files inside WIP entry folders, then deduplicate by parent folder to get the list of entries. The parent folder name is `<id>-<slug>` — the first 4 characters are the id, everything after the first hyphen is the slug. For each entry, check which artifacts (defined in the Artifacts section) exist to determine its state, then display it using the same state ASCII art defined in the Entry Workflow States section.
+
+**What user sees:**
+
+```
+WIP entries:
+
+  **abc1**  how-to-approach-code-review     ● research ─── draft
+  **def2**  ai-assisted-debugging           ● research ─── ● draft
+
+Continue with /entry <id>, or start a new one with /entry "your rough idea".
+```
+
+If no entries exist: `No WIP entries. Start one with /entry "your rough idea".`
+
 ### `/entry "Your rough idea"`
 
-Extract slug from idea, generate 4-char ULID, create `entries/wip/<ULID>-<slug>/research.md` with template sections.
+Extract slug from idea, generate 4-char id, create `entries/wip/<id>-<slug>/research.md` with template sections.
 
 **What user sees:**
 
@@ -76,7 +84,7 @@ You can: revise research, move to draft
 
 User responds with choice (revise research, move to draft) → Skill processes → Shows updated state → Presents options again
 
-### `/entry <ulid>`
+### `/entry <id>`
 
 Detect state (research exists? draft exists?), show content preview (first 100 words of each), present available options.
 
@@ -115,8 +123,11 @@ Prompt "What would you like to revise or explore?" → Append to research.md
 **Move to Draft:**
 
 - Prompt: "Do you have a title?"
-- If yes: Create draft.md with H1 pre-filled
-- If no: Create draft.md with `# [Add your title here]` placeholder
+  - If user provides a title: use it
+  - If user says no / doesn't have one: use the placeholder `Untitled entry`
+- Read research.md in full
+- Write an entry body informed by the research — not a summary of it. The emerging argument drives the shape; specific observations do the grounding.
+- Write draft.md with H1 + generated body
 
 **Revise Draft:**
 
@@ -126,32 +137,27 @@ Prompt "What would you like to revise or explore?" → Append to research.md
 
 **Integrate Research → Draft:**
 
-- Show research.md excerpt
-- Prompt: "How should these findings inform your draft?"
-- User specifies section or area → Skill updates draft.md
-- (Name changed from "fold" to "integrate" — clearer action)
+- Read both research.md and draft.md in full
+- Identify findings in research not yet reflected in the draft
+- Show the user what's missing: "These research findings aren't in the draft yet: [list]"
+- Prompt: "Which of these should land in the draft, and where?"
+- User responds → Skill integrates at the specified location
+- For revised or additional research after the initial draft — not for first-time population
 
 **Promote:**
 
 - Check H1 in draft.md
-  - If missing: Show draft, prompt "What's your entry title?", user provides, skill updates draft.md with H1, continue (keep user in flow, don't abort)
-  - If present: Continue
+  - If missing or equals `Untitled entry`: Show draft, prompt "What's your entry title?", user provides, skill updates draft.md with H1, continue (keep user in flow, don't abort)
+  - Otherwise: Continue
 - Validate content present (title + body)
   - If only title, no body: Show draft, offer to add content now before promoting
 - Extract title, create slug, copy to `entries/drafts/{title}.md`
 - Show: "✔ Promoted to entries/drafts/{title}.md"
 
-## File Structure
-
-Entries live in `entries/wip/<ULID>-<slug>/`:
-
-- `research.md` — Exploration, notes, references (see `templates/research.md`)
-- `draft.md` — Entry with H1 title + body (see `templates/draft.md`)
-
 ## Implementation Notes
 
 **Slug generation:** Lowercase → split on spaces → join with hyphens → remove specials  
-**ULID:** 4 random alphanumeric characters (a-z, 0-9). Ensures uniqueness even if slugs collide.
+**ID:** 4 random alphanumeric characters (a-z, 0-9). Ensures uniqueness even if slugs collide.
 
 **Voice alignment:** Content should follow the project's voice guidelines. During work, if something doesn't align, guide without blocking. The skill focuses on workflow — voice quality is collaborative feedback, not a hard gate.
 
@@ -159,4 +165,3 @@ Entries live in `entries/wip/<ULID>-<slug>/`:
 
 **Error recovery:** All errors are recoverable. Show the problem clearly, show what's needed, offer immediate fix path inline. No abort — continue workflow to keep user in flow.
 
-**State display:** Every interaction cycle shows current state (which artifacts exist + preview) before presenting options. This grounds the user in "where am I" before deciding "what next".
