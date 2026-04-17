@@ -22,10 +22,10 @@ The skill's job is to show current state and present next options based on which
 
 ```
 STATE 1: Research only
-  └─ Options: revise research, or move to draft
+  └─ Options: revise research, move to draft, or archive
 
 STATE 2: Research + Draft
-  └─ Options: revise research, revise draft, integrate research→draft, or promote
+  └─ Options: revise research, revise draft, integrate research→draft, promote, or archive
 ```
 
 **Research input comes from 2 sources:**
@@ -82,7 +82,7 @@ Entry: abc1-how-to-approach-code-review
 You can: revise research, move to draft
 ```
 
-User responds with choice (revise research, move to draft) → Skill processes → Shows updated state → Presents options again
+User responds with choice (revise research, move to draft, archive) → Skill processes → Shows updated state → Presents options again
 
 ### `/entry <id>`
 
@@ -97,7 +97,7 @@ Detect state (research exists? draft exists?), show content preview (first 100 w
 
 "During code review, teams often spend time on..."
 
-You can: revise research, move to draft
+You can: revise research, move to draft, archive
 ```
 
 **What user sees (research + draft stage):**
@@ -110,7 +110,7 @@ You can: revise research, move to draft
 Research: "During code review, teams often spend time on..."
 Draft: "# Optimizing Code Review\n\nCode reviews are critical..."
 
-You can: revise research, revise draft, integrate research, promote
+You can: revise research, revise draft, integrate research, promote, archive
 ```
 
 User responds with choice → Skill processes → Shows updated state
@@ -143,6 +143,12 @@ Prompt "What would you like to revise or explore?" → Append to research.md
 - Prompt: "Which of these should land in the draft, and where?"
 - User responds → Skill integrates at the specified location
 - For revised or additional research after the initial draft — not for first-time population
+
+**Archive:**
+
+- Move `entries/wip/<id>-<slug>/` as-is to `entries/archived/<id>-<slug>/` (create `entries/archived/` if it doesn't exist)
+- Show: "✔ Archived <id>-<slug> to entries/archived/"
+- No further options — the entry is no longer WIP
 
 **Promote:**
 
