@@ -23,6 +23,10 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
       - name: Check branch is up to date with main
         id: uptodate
         env:
@@ -75,7 +79,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           MODE="${{ steps.mode.outputs.mode }}"
-          AUTHOR=$(python3 -c "import yaml; print(yaml.safe_load(open('entry.yml'))['author'])")
+          AUTHOR=$(uv run scripts/read_config.py author)
           echo "author=$AUTHOR" >> "$GITHUB_OUTPUT"
 
           if [ "$MODE" = "first-publish" ]; then
@@ -114,7 +118,7 @@ jobs:
           else
             WORD_COUNT=$(cat "$ENTRY_DIR/body.md" | sed 's/<[^>]*>//g' | wc -w | tr -d ' ')
           fi
-          READING_TIME=$(python3 -c "import math; print(max(1, math.ceil(${WORD_COUNT:-0} / 200)))")
+          READING_TIME=$(uv run python3 -c "import math; print(max(1, math.ceil(${WORD_COUNT:-0} / 200)))")
           echo "reading_time=$READING_TIME" >> "$GITHUB_OUTPUT"
 
       - name: Generate slug
@@ -186,40 +190,28 @@ jobs:
           mkdir -p "$ENTRY_DIR"
           cp "${{ steps.content.outputs.body_file }}" "$ENTRY_DIR/body.md"
 
-      - name: Generate speech.md (hash-cached)
-        id: speech
+      - name: Check body hash
+        id: body_hash
         run: |
-          SLUG="${{ steps.slug.outputs.slug }}"
-          NUMBER="${{ steps.number.outputs.number }}"
-          ENTRY_DIR="entries/${NUMBER}-${SLUG}"
-          mkdir -p "$ENTRY_DIR"
-
-          # Compute hash of body.md
+          ENTRY_DIR="entries/${{ steps.number.outputs.number }}-${{ steps.slug.outputs.slug }}"
           BODY_HASH=$(sha256sum "$ENTRY_DIR/body.md" | cut -d' ' -f1)
-
-          # Check if speech.md needs regeneration
-          NEEDS_REGEN="false"
-          if [ ! -f "$ENTRY_DIR/speech.md" ]; then
-            echo "speech.md missing — generating."
-            NEEDS_REGEN="true"
-          elif [ ! -f "$ENTRY_DIR/.speech-hash" ]; then
-            echo "No .speech-hash — generating speech.md."
-            NEEDS_REGEN="true"
-          elif [ "$(cat "$ENTRY_DIR/.speech-hash")" != "$BODY_HASH" ]; then
-            echo "body.md changed — regenerating speech.md."
-            NEEDS_REGEN="true"
+          echo "body_hash=$BODY_HASH" >> "$GITHUB_OUTPUT"
+          if [ ! -f "$ENTRY_DIR/.speech-hash" ] || [ "$(cat "$ENTRY_DIR/.speech-hash")" != "$BODY_HASH" ]; then
+            echo "body_changed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "body.md unchanged — skipping speech.md generation."
+            echo "body_changed=false" >> "$GITHUB_OUTPUT"
           fi
 
-          if [ "$NEEDS_REGEN" = "true" ]; then
-            # Strip markdown/HTML from body.md for TTS
-            python3 -c "import re; text = open('$ENTRY_DIR/body.md').read(); text = re.sub(r'<[^>]+>', '', text); text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text); text = re.sub(r'\*{1,3}([^*]+)\*{1,3}', r'\1', text); text = re.sub(r'_{1,3}([^_]+)_{1,3}', r'\1', text); text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE); text = re.sub(r'\x60([^\x60]+)\x60', r'\1', text); text = re.sub(r'\n{3,}', '\n\n', text); print(text.strip())" > "$ENTRY_DIR/speech.md"
+      - name: Generate speech.md
+        id: speech
+        if: steps.body_hash.outputs.body_changed == 'true'
+        run: |
+          ENTRY_DIR="entries/${{ steps.number.outputs.number }}-${{ steps.slug.outputs.slug }}"
 
-            # Write hash
-            echo "$BODY_HASH" > "$ENTRY_DIR/.speech-hash"
-          fi
+          # Strip markdown/HTML from body.md for TTS
+          uv run python3 -c "import re; text = open('$ENTRY_DIR/body.md').read(); text = re.sub(r'<[^>]+>', '', text); text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text); text = re.sub(r'\*{1,3}([^*]+)\*{1,3}', r'\1', text); text = re.sub(r'_{1,3}([^_]+)_{1,3}', r'\1', text); text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE); text = re.sub(r'\x60([^\x60]+)\x60', r'\1', text); text = re.sub(r'\n{3,}', '\n\n', text); print(text.strip())" > "$ENTRY_DIR/speech.md"
 
+          echo "${{ steps.body_hash.outputs.body_hash }}" > "$ENTRY_DIR/.speech-hash"
           echo "speech_file=$ENTRY_DIR/speech.md" >> "$GITHUB_OUTPUT"
 
       - name: Generate audio (hash-cached)
@@ -234,8 +226,8 @@ jobs:
           mkdir -p "$ENTRY_DIR"
 
           # Read voice/model from defaults in entry.yml
-          VOICE_ID=$(python3 -c "import yaml; print(yaml.safe_load(open('entry.yml'))['voice'])")
-          MODEL_ID=$(python3 -c "import yaml; print(yaml.safe_load(open('entry.yml'))['model'])")
+          VOICE_ID=$(uv run scripts/read_config.py voice)
+          MODEL_ID=$(uv run scripts/read_config.py model)
 
           echo "voice_id=$VOICE_ID" >> "$GITHUB_OUTPUT"
           echo "model_id=$MODEL_ID" >> "$GITHUB_OUTPUT"
@@ -374,6 +366,19 @@ jobs:
         run: |
           rm "${{ steps.mode.outputs.draft_file }}"
 
+      - name: Generate destination artifacts
+        if: steps.body_hash.outputs.body_changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ENTRY_DIR="entries/${{ steps.number.outputs.number }}-${{ steps.slug.outputs.slug }}"
+          COMMENT="📄 Destination artifacts ready:\n"
+          while read dest; do
+            LINE=$(uv run "scripts/generate_${dest}.py" --entry-dir "$ENTRY_DIR")
+            COMMENT+="- ${LINE}\n"
+          done < <(uv run scripts/read_config.py destinations)
+          gh pr comment "${{ github.event.pull_request.number }}" --body "$(printf "$COMMENT")"
+
       - name: Post audio failure comment
         if: steps.audio.outputs.audio_ok != 'true'
         env:
@@ -433,8 +438,8 @@ jobs:
 
           # Check audio hash
           if [ -f "$ENTRY_DIR/speech.md" ] && [ -f "$ENTRY_DIR/.audio-hash" ]; then
-            VOICE_ID=$(python3 -c "import yaml; print(yaml.safe_load(open('entry.yml'))['voice'])")
-            MODEL_ID=$(python3 -c "import yaml; print(yaml.safe_load(open('entry.yml'))['model'])")
+            VOICE_ID=$(uv run scripts/read_config.py voice)
+            MODEL_ID=$(uv run scripts/read_config.py model)
             CURRENT=$(cat "$ENTRY_DIR/speech.md" <(echo "$VOICE_ID") <(echo "$MODEL_ID") | sha256sum | cut -d' ' -f1)
             STORED=$(cat "$ENTRY_DIR/.audio-hash")
             if [ "$CURRENT" != "$STORED" ]; then
@@ -445,7 +450,7 @@ jobs:
 
           if [ "$STALE" = "true" ]; then
             gh pr comment "${{ github.event.pull_request.number }}" \
-              --body "⚠️ Pipeline artifacts are stale. Remove and re-add \`ready\` to regenerate."
+              --body "⚠️ Pipeline artifacts are stale (speech, audio, destination artifacts). Remove and re-add \`ready\` to regenerate."
           else
             echo "All artifacts up to date."
           fi

@@ -1,3 +1,5 @@
 author: "Dean Harel"
 voice: "XA2bIQ92TabjGbpO2xRr"
 model: "eleven_multilingual_v2"
+destinations:
+  x_article: true
