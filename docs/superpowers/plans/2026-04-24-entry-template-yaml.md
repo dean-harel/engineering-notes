@@ -38,32 +38,32 @@ rules: []
 
 sections:
   - heading: Rough Idea
-    template: |
+    description: |
       The seed of the entry: what you want to explore and why it's worth exploring. This section anchors direction — everything downstream builds from it, so it should be specific enough that someone else could tell what the entry is reaching for.
     instructions: ""
 
   - heading: Questions
-    template: |
+    description: |
       The core inquiries driving the exploration — what you need to probe or resolve to turn the rough idea into a claim. Lives here so the research has a target; expected to evolve as patterns emerge.
     instructions: ""
 
   - heading: Sources & Links
-    template: |
+    description: |
       References gathered during exploration: articles, docs, conversations, prior work. Kept separate from observations so provenance stays traceable.
     instructions: ""
 
   - heading: Observations
-    template: |
+    description: |
       Concrete material from sources or direct experience — scenes, quotes, claims, findings, moments. The specific grounding the thesis will rest on; not summary, not interpretation.
     instructions: ""
 
   - heading: Patterns & Emerging Thesis
-    template: |
+    description: |
       What connects across observations: recurring threads, tensions, the shape of an argument forming. This is where raw material turns into a point of view.
     instructions: ""
 
   - heading: Refined Direction
-    template: |
+    description: |
       How thinking has shifted from the rough idea once research caught up with it. New questions that appeared, claims that strengthened or collapsed, the sharper version of what the entry is actually about.
     instructions: ""
 ```
@@ -72,7 +72,7 @@ Note: the top-level `# Research: [Your Topic]` H1 that the current markdown temp
 
 - [ ] **Step 2: Verify YAML parses**
 
-Run: `python3 -c "import yaml; d = yaml.safe_load(open('.claude/skills/entry/templates/research.yaml')); assert isinstance(d['rules'], list); assert len(d['sections']) == 6; assert all('heading' in s and 'template' in s and 'instructions' in s for s in d['sections']); print('ok')"`
+Run: `python3 -c "import yaml; d = yaml.safe_load(open('.claude/skills/entry/templates/research.yaml')); assert isinstance(d['rules'], list); assert len(d['sections']) == 6; assert all('heading' in s and 'description' in s and 'instructions' in s for s in d['sections']); print('ok')"`
 
 Expected output: `ok`
 
@@ -94,7 +94,7 @@ rules: []
 
 sections:
   - heading: Your Title Here
-    template: |
+    description: |
       Your entry body
     instructions: ""
 ```
@@ -171,14 +171,14 @@ Every artifact has a YAML template at `templates/<artifact>.yaml` with this shap
 rules: []          # optional: cross-cutting procedural guidance (list of strings)
 sections:          # ordered, non-empty
   - heading: ...   # rendered as `## {heading}` in the entry file
-    template: ...  # rendered inside `[...]` as the purpose placeholder
+    description: ...  # rendered inside `[...]` as the purpose placeholder
     instructions: ...  # consulted when filling/revising; never written to the entry
 ```
 
 The skill follows three generic rules regardless of which artifact is being touched:
 
 1. **Required template.** `templates/<artifact>.yaml` must exist for every artifact listed above. If missing or malformed, surface a user-facing error and stop.
-2. **Create by rendering.** When creating an artifact in an entry folder, parse the YAML and write each section as `## {heading}` followed by a blank line and `[{template}]`. Do not write `rules` or `instructions` into the entry file.
+2. **Create by rendering.** When creating an artifact in an entry folder, parse the YAML and write each section as `## {heading}` followed by a blank line and `[{description}]`. Do not write `rules` or `instructions` into the entry file.
 3. **Fill and revise by consulting.** When filling a section on creation, or during any later fill/revise action, read the YAML, match sections by heading text, and follow the matching section's `instructions` plus the top-level `rules`. Do not copy `instructions` or `rules` into the entry file.
 ```
 
@@ -193,14 +193,14 @@ Every artifact has a YAML template at `templates/<artifact>.yaml` with this shap
 rules: []          # optional: cross-cutting procedural guidance (list of strings)
 sections:          # ordered, non-empty
   - heading: ...   # rendered as `## {heading}` in the entry file
-    template: ...  # rendered inside `[...]` as the purpose placeholder
+    description: ...  # rendered inside `[...]` as the purpose placeholder
     instructions: ...  # consulted when filling/revising; never written to the entry
 ~~~
 
 The skill follows three generic rules regardless of which artifact is being touched:
 
 1. **Required template.** `templates/<artifact>.yaml` must exist for every artifact listed above. If missing or malformed, surface a user-facing error and stop.
-2. **Create by rendering.** When creating an artifact in an entry folder, parse the YAML and write each section as `## {heading}` followed by a blank line and `[{template}]`. Do not write `rules` or `instructions` into the entry file.
+2. **Create by rendering.** When creating an artifact in an entry folder, parse the YAML and write each section as `## {heading}` followed by a blank line and `[{description}]`. Do not write `rules` or `instructions` into the entry file.
 3. **Fill and revise by consulting.** When filling a section on creation, or during any later fill/revise action, read the YAML, match sections by heading text, and follow the matching section's `instructions` plus the top-level `rules`. Do not copy `instructions` or `rules` into the entry file.
 ```
 
@@ -237,7 +237,7 @@ To:
 Extract slug from idea, generate 4-char id, render `templates/research.yaml` into `entries/wip/<id>-<slug>/research.md` per the Template contract.
 ```
 
-The rest of the paragraph (populate only the addressed section, leave other placeholders intact, purpose descriptions guide later exploration) stays as-is — it still describes the correct first-fill behavior, now applied to the rendered `[template]` blocks.
+The rest of the paragraph (populate only the addressed section, leave other placeholders intact, purpose descriptions guide later exploration) stays as-is — it still describes the correct first-fill behavior, now applied to the rendered `[description]` blocks.
 
 - [ ] **Step 2: Verify**
 
@@ -269,8 +269,8 @@ Expected behavior:
 - New folder `entries/wip/<id>-verifying-yaml-template-migration/` created.
 - `research.md` inside contains six `## {heading}` sections matching `research.yaml` in order.
 - The "Rough Idea" section contains expanded prose about the topic (populated because the rough idea addresses it directly).
-- All other five sections contain `[{template placeholder prose}]` verbatim from the YAML — not the YAML itself, not `rules` or `instructions`.
-- The file contains no `instructions:`, no `rules:`, no `template:` keys.
+- All other five sections contain `[{description prose}]` verbatim from the YAML — not the YAML itself, not `rules` or `instructions`.
+- The file contains no `instructions:`, no `rules:`, no `description:` keys.
 
 - [ ] **Step 3: Verify "revise research" consults the YAML**
 
@@ -298,5 +298,5 @@ If everything worked, no follow-up commit needed.
 ## Self-Review Notes
 
 - **Spec coverage:** YAML format (Tasks 1–2), required templates (Tasks 1–2 + contract rule 1 in Task 4), create-by-rendering (contract rule 2 in Task 4), fill/revise by consulting (contract rule 3 in Task 4), artifact filenames updated (Task 4), `/entry` creation path updated (Task 5), manual verification (Task 6). All spec sections covered.
-- **Type consistency:** Field names used consistently — `rules`, `sections`, `heading`, `template`, `instructions`. Filenames consistent: `research.yaml`, `draft.yaml`.
+- **Type consistency:** Field names used consistently — `rules`, `sections`, `heading`, `description`, `instructions`. Filenames consistent: `research.yaml`, `draft.yaml`.
 - **No placeholders:** Every code step has exact content. Task 6 is manual verification by design (no code harness); steps specify exact commands and expected outputs.

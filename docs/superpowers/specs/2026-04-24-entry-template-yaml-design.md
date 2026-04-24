@@ -29,13 +29,13 @@ rules:
 
 sections:
   - heading: Rough Idea
-    template: |
+    description: |
       The seed of the entry: what you want to explore and why it's worth exploring. This section anchors direction — everything downstream builds from it, so it should be specific enough that someone else could tell what the entry is reaching for.
     instructions: |
       Expand the user's rough idea only enough to clarify direction. Do not over-commit to a thesis before observations exist.
 
   - heading: Questions
-    template: |
+    description: |
       The core inquiries driving the exploration — what you need to probe or resolve to turn the rough idea into a claim.
     instructions: |
       Phrase as actual questions, not topic labels. Expect them to evolve as observations accumulate.
@@ -46,7 +46,7 @@ Minimal is allowed. `draft.yaml` may have one section, empty `instructions`, and
 ```yaml
 sections:
   - heading: Your Title Here
-    template: |
+    description: |
       Your entry body
     instructions: ""
 ```
@@ -56,7 +56,7 @@ sections:
 - `rules` (optional list of strings) — cross-cutting procedural guidance that applies across sections.
 - `sections` (required list, non-empty) — ordered list of sections in the order they appear in the rendered artifact.
   - `heading` (required string) — the section heading, rendered as `## {heading}`.
-  - `template` (required string, may be empty) — placeholder prose, rendered in the entry file wrapped in `[...]`.
+  - `description` (required string, may be empty) — user-facing purpose prose, rendered in the entry file wrapped in `[...]`.
   - `instructions` (required string, may be empty) — how to fill or revise this section. Never rendered into the entry file.
 
 ### Skill contract
@@ -69,17 +69,17 @@ The skill remains template-agnostic. SKILL.md gains these rules, stated generica
    ```
    ## {heading}
 
-   [{template}]
+   [{description}]
    ```
 
    `rules` and `instructions` are not written to the entry file.
 3. **Fill and revise by consulting.** When filling a section on creation, or when revising an existing artifact, read the YAML and follow the matching section's `instructions` plus the top-level `rules`. Match sections by heading text. Never write instructions or rules into the entry file.
 
-The existing behavior around first-fill creation ("populate only the section whose purpose the rough idea directly addresses; leave other placeholders intact") is preserved — the YAML's `template` field plays the role the current `[...]` placeholders play today.
+The existing behavior around first-fill creation ("populate only the section whose purpose the rough idea directly addresses; leave other placeholders intact") is preserved — the YAML's `description` field plays the role the current `[...]` placeholders play today.
 
 ### What changes
 
-- `templates/research.md` → `templates/research.yaml`. Existing purpose text moves into `template` fields. New `instructions` fields and optional `rules` list are added per the author's preferences.
+- `templates/research.md` → `templates/research.yaml`. Existing purpose text moves into `description` fields. New `instructions` fields and optional `rules` list are added per the author's preferences.
 - `templates/draft.md` → `templates/draft.yaml`. Minimal content, likely no `instructions` or `rules` initially.
 - SKILL.md Artifacts section updates filenames from `research.md` / `draft.md` to `research.yaml` / `draft.yaml` (the artifact names used elsewhere in the skill — "research", "draft" — do not change).
 - SKILL.md adds the three contract rules above in a new short subsection under Artifacts or Implementation Notes.
