@@ -34,45 +34,53 @@ Existing WIP entries (e.g., `entries/wip/k7m3-rewind-to-avoid-agent-misuse/resea
 Create `.claude/skills/entry/templates/research.yaml` with this exact content:
 
 ```yaml
-rules: []
+rules:
+  - Every claim or finding drawn from an external source must be traceable to that source.
+  - Do not fabricate observations, sources, or findings. Include only what the user provides, what verified research surfaces, or what direct experience contributes.
 
 sections:
   - heading: Rough Idea
     description: |
-      The seed of the entry: what you want to explore and why it's worth exploring. This section anchors direction — everything downstream builds from it, so it should be specific enough that someone else could tell what the entry is reaching for.
-    instructions: ""
+      Seed of the entry: what you want to explore and why it's worth it. Anchors direction for everything downstream.
+    instructions: |
+      Expand the user's input only enough to make the direction legible. Do not commit to a thesis — the thesis emerges later, from observations. If the input already reads as a clear direction, leave it as-is.
 
   - heading: Questions
     description: |
-      The core inquiries driving the exploration — what you need to probe or resolve to turn the rough idea into a claim. Lives here so the research has a target; expected to evolve as patterns emerge.
-    instructions: ""
+      Core inquiries driving the exploration — what you need to probe or resolve to turn the rough idea into a claim. Expected to evolve as patterns emerge.
+    instructions: |
+      Phrase as actual questions, not topic labels. New questions can appear on any revise as the direction sharpens; existing ones stay.
 
   - heading: Sources & Links
     description: |
-      References gathered during exploration: articles, docs, conversations, prior work. Kept separate from observations so provenance stays traceable.
-    instructions: ""
+      References gathered during exploration: articles, docs, conversations, prior work.
+    instructions: |
+      One reference per line, with a title and a link where one exists. This section holds the reference itself, not the findings or claims drawn from it. Prefer current sources; older ones earn a place when they are historically meaningful (origin of a concept, a documented moment).
 
   - heading: Observations
     description: |
-      Concrete material from sources or direct experience — scenes, quotes, claims, findings, moments. The specific grounding the thesis will rest on; not summary, not interpretation.
-    instructions: ""
+      Concrete material from sources or direct experience — scenes, quotes, claims, findings, moments. The specific grounding the thesis will rest on.
+    instructions: |
+      One observation per bullet. Quote or paraphrase tightly; do not summarize or interpret.
 
   - heading: Patterns & Emerging Thesis
     description: |
-      What connects across observations: recurring threads, tensions, the shape of an argument forming. This is where raw material turns into a point of view.
-    instructions: ""
+      Recurring threads, tensions, and the shape of an argument forming. Where raw material turns into a point of view.
+    instructions: |
+      Write in prose, not bullets. A pattern should be one sentence you could argue for. Early entries are allowed to be wrong — revise freely as the thesis sharpens.
 
   - heading: Refined Direction
     description: |
-      How thinking has shifted from the rough idea once research caught up with it. New questions that appeared, claims that strengthened or collapsed, the sharper version of what the entry is actually about.
-    instructions: ""
+      The sharper version of what the entry is actually about, after research caught up with the rough idea. Captures what shifted, what strengthened, what collapsed.
+    instructions: |
+      Keep it short — a paragraph restating direction, not a rewrite of the whole research.
 ```
 
 Note: the top-level `# Research: [Your Topic]` H1 that the current markdown template carries is intentionally omitted. The skill will render only `## {heading}` per section. The previous H1 was purely decorative — research artifacts are addressed by folder id, not by an H1 title.
 
 - [ ] **Step 2: Verify YAML parses**
 
-Run: `python3 -c "import yaml; d = yaml.safe_load(open('.claude/skills/entry/templates/research.yaml')); assert isinstance(d['rules'], list); assert len(d['sections']) == 6; assert all('heading' in s and 'description' in s and 'instructions' in s for s in d['sections']); print('ok')"`
+Run: `python3 -c "import yaml; d = yaml.safe_load(open('.claude/skills/entry/templates/research.yaml')); assert isinstance(d['rules'], list) and len(d['rules']) == 2; assert len(d['sections']) == 6; assert all(isinstance(s[k], str) and s[k] for s in d['sections'] for k in ('heading','description','instructions')); print('ok')"`
 
 Expected output: `ok`
 
@@ -219,25 +227,23 @@ Expected: Artifacts section shows both bullets referencing `.yaml` templates, fo
 **Files:**
 - Modify: `.claude/skills/entry/SKILL.md` — the `/entry "Your rough idea"` section (around line 72)
 
-The current text says: *"create `entries/wip/<id>-<slug>/research.md` from the template. Populate only the section whose purpose the rough idea directly addresses — expand the input enough to clarify direction, but do not fabricate content for sections the user hasn't contributed to yet. Leave every other placeholder intact..."*
+Two things change here: the create path references the YAML render, and the section-specific "expand enough to clarify direction, but do not fabricate content" guidance is trimmed because it now lives in `Rough Idea`'s `instructions` in `research.yaml`. SKILL.md keeps only the generic first-fill rule.
 
-This still works but should reference the YAML render explicitly so the reader connects it to the Template contract.
+- [ ] **Step 1: Replace the full paragraph**
 
-- [ ] **Step 1: Replace the first sentence of that paragraph**
-
-Change:
+Locate this paragraph (around line 72):
 
 ```
-Extract slug from idea, generate 4-char id, create `entries/wip/<id>-<slug>/research.md` from the template.
+Extract slug from idea, generate 4-char id, create `entries/wip/<id>-<slug>/research.md` from the template. Populate only the section whose purpose the rough idea directly addresses — expand the input enough to clarify direction, but do not fabricate content for sections the user hasn't contributed to yet. Leave every other placeholder intact; their purpose descriptions exist to guide later exploration, not to be pre-filled on creation.
 ```
 
-To:
+Replace with:
 
 ```
-Extract slug from idea, generate 4-char id, render `templates/research.yaml` into `entries/wip/<id>-<slug>/research.md` per the Template contract.
+Extract slug from idea, generate 4-char id, render `templates/research.yaml` into `entries/wip/<id>-<slug>/research.md` per the Template contract. Populate only the section whose purpose the rough idea directly addresses — following that section's `instructions` from the YAML. Leave every other section's rendered `[description]` placeholder intact for later exploration.
 ```
 
-The rest of the paragraph (populate only the addressed section, leave other placeholders intact, purpose descriptions guide later exploration) stays as-is — it still describes the correct first-fill behavior, now applied to the rendered `[description]` blocks.
+Rationale: the generic first-fill rule (only the addressed section is populated; others stay as placeholders) remains in SKILL.md because it's a cross-artifact behavior. The *how* of populating Rough Idea ("expand enough, don't commit to a thesis") moved into `research.yaml`'s Rough Idea `instructions` in Task 1 and is now pulled in by reference.
 
 - [ ] **Step 2: Verify**
 
@@ -245,9 +251,44 @@ Run: `grep -n "render .templates/research.yaml" .claude/skills/entry/SKILL.md`
 
 Expected: one match in the `/entry "Your rough idea"` section.
 
+Run: `grep -c "expand the input enough to clarify direction" .claude/skills/entry/SKILL.md`
+
+Expected: `0` — the section-specific guidance should no longer appear in SKILL.md (it lives in the YAML).
+
 ---
 
-## Task 6: Manual dry-run verification
+## Task 6: Update SKILL.md — Revise Research action
+
+**Files:**
+- Modify: `.claude/skills/entry/SKILL.md` — the **Revise Research** entry under Per-Action Behavior (around line 120).
+
+The current text is generic: *"Prompt 'What would you like to revise or explore?' → Append to research.md."* This leaves room for Claude to proactively modify unrelated sections on a revise ("the new observation affects Patterns, so I'll update that too"). The YAML `instructions` per section are per-section rules — they can't enforce an action-level constraint about *which* sections get touched. That constraint belongs in SKILL.md.
+
+- [ ] **Step 1: Replace the Revise Research block**
+
+Locate this block:
+
+```
+**Revise Research:**  
+Prompt "What would you like to revise or explore?" → Append to research.md
+```
+
+Replace with:
+
+```
+**Revise Research:**  
+Prompt "What would you like to revise or explore?" → Append to research.md in the section(s) the user named. Do not proactively modify other sections, even if the new material feels connected to them. Follow each touched section's `instructions` in `research.yaml` plus the top-level `rules`.
+```
+
+- [ ] **Step 2: Verify**
+
+Run: `grep -n "Do not proactively modify other sections" .claude/skills/entry/SKILL.md`
+
+Expected: one match, in the Revise Research block.
+
+---
+
+## Task 7: Manual dry-run verification
 
 This skill has no automated test harness — it runs inside Claude Code. Verify by exercising it.
 
@@ -297,6 +338,6 @@ If everything worked, no follow-up commit needed.
 
 ## Self-Review Notes
 
-- **Spec coverage:** YAML format (Tasks 1–2), required templates (Tasks 1–2 + contract rule 1 in Task 4), create-by-rendering (contract rule 2 in Task 4), fill/revise by consulting (contract rule 3 in Task 4), artifact filenames updated (Task 4), `/entry` creation path updated (Task 5), manual verification (Task 6). All spec sections covered.
+- **Spec coverage:** YAML format (Tasks 1–2), required templates (Tasks 1–2 + contract rule 1 in Task 4), create-by-rendering (contract rule 2 in Task 4), fill/revise by consulting (contract rule 3 in Task 4), artifact filenames updated (Task 4), `/entry` creation path updated (Task 5), Revise Research action scope tightened (Task 6), manual verification (Task 7). All spec sections covered.
 - **Type consistency:** Field names used consistently — `rules`, `sections`, `heading`, `description`, `instructions`. Filenames consistent: `research.yaml`, `draft.yaml`.
-- **No placeholders:** Every code step has exact content. Task 6 is manual verification by design (no code harness); steps specify exact commands and expected outputs.
+- **No placeholders:** Every code step has exact content. Task 7 is manual verification by design (no code harness); steps specify exact commands and expected outputs.
