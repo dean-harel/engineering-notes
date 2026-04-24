@@ -31,14 +31,16 @@ sections:
   - heading: Rough Idea
     description: |
       The seed of the entry: what you want to explore and why it's worth exploring. This section anchors direction — everything downstream builds from it, so it should be specific enough that someone else could tell what the entry is reaching for.
-    instructions: |
-      Expand the user's rough idea only enough to clarify direction. Do not over-commit to a thesis before observations exist.
+    instructions:
+      - Expand the user's rough idea only enough to clarify direction.
+      - Do not over-commit to a thesis before observations exist.
 
   - heading: Questions
     description: |
       The core inquiries driving the exploration — what you need to probe or resolve to turn the rough idea into a claim.
-    instructions: |
-      Phrase as actual questions, not topic labels. Expect them to evolve as observations accumulate.
+    instructions:
+      - Phrase as actual questions, not topic labels.
+      - Expect them to evolve as observations accumulate.
 ```
 
 ### Schema
@@ -47,7 +49,7 @@ sections:
 - `sections` (required list, non-empty) — ordered list of sections in the order they appear in the rendered artifact.
   - `heading` (required string) — the section heading, rendered as `## {heading}`.
   - `description` (required string, may be empty) — user-facing purpose prose, rendered in the entry file wrapped in `[...]`.
-  - `instructions` (required string, may be empty) — how to fill or revise this section. Never rendered into the entry file.
+  - `instructions` (required non-empty list of strings) — how to fill or revise this section, as discrete rules. Never rendered into the entry file.
 
 ### Skill contract
 

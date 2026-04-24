@@ -42,45 +42,53 @@ sections:
   - heading: Rough Idea
     description: |
       Seed of the entry: what you want to explore and why it's worth it. Anchors direction for everything downstream.
-    instructions: |
-      Expand the user's input only enough to make the direction legible. Do not commit to a thesis — the thesis emerges later, from observations. If the input already reads as a clear direction, leave it as-is.
+    instructions:
+      - Expand the user's input only enough to make the direction legible.
+      - Do not commit to a thesis — the thesis emerges later, from observations.
+      - If the input already reads as a clear direction, leave it as-is.
 
   - heading: Questions
     description: |
       Core inquiries driving the exploration — what you need to probe or resolve to turn the rough idea into a claim. Expected to evolve as patterns emerge.
-    instructions: |
-      Phrase as actual questions, not topic labels. New questions can appear on any revise as the direction sharpens; existing ones stay.
+    instructions:
+      - Phrase as actual questions, not topic labels.
+      - New questions can appear on any revise as the direction sharpens; existing ones stay.
 
   - heading: Sources & Links
     description: |
       References gathered during exploration: articles, docs, conversations, prior work.
-    instructions: |
-      One reference per line, with a title and a link where one exists. This section holds the reference itself, not the findings or claims drawn from it. Prefer current sources; older ones earn a place when they are historically meaningful (origin of a concept, a documented moment).
+    instructions:
+      - One reference per line, with a title and a link where one exists.
+      - This section holds the reference itself, not the findings or claims drawn from it.
+      - Prefer current sources; older ones earn a place when they are historically meaningful (origin of a concept, a documented moment).
 
   - heading: Observations
     description: |
       Concrete material from sources or direct experience — scenes, quotes, claims, findings, moments. The specific grounding the thesis will rest on.
-    instructions: |
-      One observation per bullet. Quote or paraphrase tightly; do not summarize or interpret.
+    instructions:
+      - One observation per bullet.
+      - Quote or paraphrase tightly; do not summarize or interpret.
 
   - heading: Patterns & Emerging Thesis
     description: |
       Recurring threads, tensions, and the shape of an argument forming. Where raw material turns into a point of view.
-    instructions: |
-      Write in prose, not bullets. A pattern should be one sentence you could argue for. Early entries are allowed to be wrong — revise freely as the thesis sharpens.
+    instructions:
+      - Write in prose, not bullets.
+      - A pattern should be one sentence you could argue for.
+      - Early entries are allowed to be wrong — revise freely as the thesis sharpens.
 
   - heading: Refined Direction
     description: |
       The sharper version of what the entry is actually about, after research caught up with the rough idea. Captures what shifted, what strengthened, what collapsed.
-    instructions: |
-      Keep it short — a paragraph restating direction, not a rewrite of the whole research.
+    instructions:
+      - Keep it short — a paragraph restating direction, not a rewrite of the whole research.
 ```
 
 Note: the top-level `# Research: [Your Topic]` H1 that the current markdown template carries is intentionally omitted. The skill will render only `## {heading}` per section. The previous H1 was purely decorative — research artifacts are addressed by folder id, not by an H1 title.
 
 - [ ] **Step 2: Verify YAML parses**
 
-Run: `python3 -c "import yaml; d = yaml.safe_load(open('.claude/skills/entry/references/research.yaml')); assert isinstance(d['rules'], list) and len(d['rules']) == 2; assert len(d['sections']) == 6; assert all(isinstance(s[k], str) and s[k] for s in d['sections'] for k in ('heading','description','instructions')); print('ok')"`
+Run: `python3 -c "import yaml; d = yaml.safe_load(open('.claude/skills/entry/references/research.yaml')); assert isinstance(d['rules'], list) and len(d['rules']) == 2; assert len(d['sections']) == 6; assert all(isinstance(s['heading'], str) and s['heading'] and isinstance(s['description'], str) and s['description'] and isinstance(s['instructions'], list) and s['instructions'] and all(isinstance(i, str) and i for i in s['instructions']) for s in d['sections']); print('ok')"`
 
 Expected output: `ok`
 
@@ -155,7 +163,8 @@ rules: []          # cross-cutting procedural guidance (list of strings; may be 
 sections:          # ordered, non-empty
   - heading: ...   # rendered as `## {heading}` in the entry file
     description: ...  # rendered inside `[...]` as the user-facing purpose placeholder
-    instructions: ...  # consulted when filling/revising; never written to the entry
+    instructions:      # list of strings, consulted when filling/revising; never written to the entry
+      - ...
 ~~~
 
 For every rendered artifact:
