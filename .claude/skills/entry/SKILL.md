@@ -25,7 +25,8 @@ rules: []          # cross-cutting procedural guidance (list of strings; may be 
 sections:          # ordered, non-empty
   - heading: ...   # rendered as `## {heading}` in the entry file
     description: ...  # rendered inside `[...]` as the user-facing purpose placeholder
-    instructions: ...  # consulted when filling/revising; never written to the entry
+    instructions:      # list of strings, consulted when filling/revising; never written to the entry
+      - ...
 ~~~
 
 For every rendered artifact:
