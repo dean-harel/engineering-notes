@@ -17,32 +17,32 @@ jobs:
           config: typos.toml
           files: entries/drafts/
 
-  ai-review:
-    name: AI Review
-    if: github.actor != 'github-actions[bot]'
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-      id-token: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: AI grammar and clarity review
-        uses: anthropics/claude-code-action@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
-            Review the draft entry files in entries/drafts/ (excluding README.md).
-            Flag grammar errors, typos the spellchecker missed, and unclear sentences.
-            Do NOT suggest style or tone changes. The author's voice should be preserved.
+  # ai-review:
+  #   name: AI Review
+  #   if: github.actor != 'github-actions[bot]'
+  #   continue-on-error: true
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #     pull-requests: write
+  #     id-token: write
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     - name: AI grammar and clarity review
+  #       uses: anthropics/claude-code-action@v1
+  #       with:
+  #         github_token: ${{ secrets.GITHUB_TOKEN }}
+  #         anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+  #         prompt: |
+  #           Review the draft entry files in entries/drafts/ (excluding README.md).
+  #           Flag grammar errors, typos the spellchecker missed, and unclear sentences.
+  #           Do NOT suggest style or tone changes. The author's voice should be preserved.
 
   summary:
     name: Review Summary
-    needs: [spellcheck, ai-review]
-    if: always() && github.actor != 'github-actions[bot]'
+    needs: [spellcheck]
+    if: always() && github.actor != 'github-actions[bot]' && !contains(github.event.pull_request.labels.*.name, 'ready')
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write

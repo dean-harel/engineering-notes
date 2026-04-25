@@ -432,6 +432,8 @@ jobs:
             STORED=$(cat "$ENTRY_DIR/.speech-hash")
             if [ "$CURRENT" != "$STORED" ]; then
               echo "body.md changed since last speech generation."
+              echo "  current sha256(body.md): $CURRENT"
+              echo "  stored .speech-hash:     $STORED"
               STALE="true"
             fi
           fi
@@ -444,6 +446,8 @@ jobs:
             STORED=$(cat "$ENTRY_DIR/.audio-hash")
             if [ "$CURRENT" != "$STORED" ]; then
               echo "Audio inputs changed since last generation."
+              echo "  current sha256(speech.md+voice+model): $CURRENT"
+              echo "  stored .audio-hash:                    $STORED"
               STALE="true"
             fi
           fi
