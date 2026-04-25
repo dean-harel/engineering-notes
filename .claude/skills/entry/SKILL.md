@@ -49,6 +49,8 @@ STATE 2: Research + Draft
   └─ Options: revise research, revise draft, integrate research→draft, promote, or archive
 ```
 
+The options above are the actions that write to artifacts. Free-form follow-ups that aren't one of these are conversation, not actions — see the Interaction Cycle.
+
 **Research input comes from 2 sources:**
 
 1. User input (focus areas, ideas, direction)
@@ -64,10 +66,12 @@ Each cycle follows the same pattern:
 2. Skill creates/detects state → folder, files, content
 3. Skill shows current state → "● research" (with preview) or "● research ─── ● draft"
 4. Skill presents options based on artifacts → "You can: revise research, move to draft, revise draft, integrate research, or promote"
-5. User responds with choice (as text, not a command)
-6. Skill processes → updates file based on choice
-7. Skill shows result → preview, confirmation
-8. Loop returns to step 3 (show current state again)
+5. User responds — either picks one of the listed actions, or continues the conversation.
+6. If an action: process and update the file. If conversation: respond in chat only; artifacts stay untouched.
+7. Skill shows result → preview and confirmation for actions; just the reply for conversation.
+8. Loop returns to step 3 (show current state again) after actions. After a conversation turn, stay in conversation — no need to re-render state until the next action.
+
+**Artifacts are only written when the user picks a listed action.** Free-form follow-ups — questions, reactions, pushback, thinking out loud — are conversation, not instructions to revise. Treat a follow-up as a revise only when the user either explicitly picks a revise option or uses imperative capture language ("add…", "note that…", "put in research that…", "write down…"). When in doubt, stay in conversation and ask before writing.
 
 ## Commands
 
@@ -103,7 +107,7 @@ Entry: abc1-how-to-approach-code-review
 You can: revise research, move to draft
 ```
 
-User responds with choice (revise research, move to draft, archive) → Skill processes → Shows updated state → Presents options again
+User responds with choice (revise research, move to draft, archive) or with free-form conversation → Skill processes the choice (and updates state) or replies in chat only → Presents options again
 
 ### `/entry <id>`
 
@@ -134,7 +138,7 @@ Draft: "# Optimizing Code Review\n\nCode reviews are critical..."
 You can: revise research, revise draft, integrate research, promote, archive
 ```
 
-User responds with choice → Skill processes → Shows updated state
+User responds with a choice (action) or with free-form conversation → Skill processes the action or replies in chat only → Shows updated state on actions
 
 ## Per-Action Behavior
 
@@ -189,6 +193,8 @@ Prompt "What would you like to revise or explore?" → Append to research.md in 
 **Voice alignment:** Content should follow the project's voice guidelines. During work, if something doesn't align, guide without blocking. The skill focuses on workflow — voice quality is collaborative feedback, not a hard gate.
 
 **Manual edits:** Skill always reads current file state. Manual edits are respected. Next invocation sees them.
+
+**Don't auto-capture.** A follow-up that reads like reflection, a question, or pushback ("hmm, maybe the real tension is…", "is this actually the same as X?") is a discuss turn — not a revise instruction. When in doubt, stay in chat and ask before writing. Capture only on explicit confirmation.
 
 **Error recovery:** All errors are recoverable. Show the problem clearly, show what's needed, offer immediate fix path inline. No abort — continue workflow to keep user in flow.
 

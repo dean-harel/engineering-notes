@@ -24,8 +24,6 @@ jobs:
           fetch-depth: 0
 
       - uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
 
       - name: Check branch is up to date with main
         id: uptodate
