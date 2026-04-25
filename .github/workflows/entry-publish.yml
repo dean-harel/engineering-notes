@@ -411,6 +411,8 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
+      - uses: astral-sh/setup-uv@v4
+
       - name: Check for stale artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
