@@ -410,6 +410,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
+          fetch-depth: 0
 
       - uses: astral-sh/setup-uv@v4
 
@@ -419,12 +420,18 @@ jobs:
         run: |
           STALE="false"
 
-          # Find entry folder
-          ENTRY_DIR=$(find entries -maxdepth 1 -type d -name '[0-9][0-9][0-9]-*' 2>/dev/null | head -1)
+          # Find the entry folder changed in this PR (not just any NNN-* dir)
+          git fetch origin main --depth=1
+          ENTRY_DIR=$(git diff --name-only origin/main...HEAD -- 'entries/[0-9][0-9][0-9]-*/' | head -1 | xargs -I{} dirname {} 2>/dev/null)
+          # Fallback: find highest-numbered entry
+          if [ -z "$ENTRY_DIR" ]; then
+            ENTRY_DIR=$(find entries -maxdepth 1 -type d -name '[0-9][0-9][0-9]-*' 2>/dev/null | sort -r | head -1)
+          fi
           if [ -z "$ENTRY_DIR" ]; then
             echo "No entry folder found — nothing to check."
             exit 0
           fi
+          echo "Checking entry: $ENTRY_DIR"
 
           # Check speech hash
           if [ -f "$ENTRY_DIR/body.md" ] && [ -f "$ENTRY_DIR/.speech-hash" ]; then
