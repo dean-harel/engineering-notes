@@ -73,7 +73,13 @@ Opening: Earn attention immediately. Disarm with a scene, reference, question, o
 Closing: End on tension or question, never neat resolution. Leave something unresolved for readers to think through. Open endings invite reader participation—aligned with a democratic voice where the reader completes the thinking.
 
 **Grounding and Sources**
-Entries should be well-sourced. Draw from articles, books, talks, prior art across disciplines. References weave naturally—not every point needs citation, but the entry as a whole should feel researched. Embed references inline with brackets `[reference]` rather than footnotes or trailing links. This keeps readers in flow.
+Entries should be well-sourced. Draw from articles, books, talks, prior art across disciplines. References weave naturally—not every point needs citation, but the entry as a whole should feel researched. Embed references inline as markdown links `[label](url)` rather than footnotes or trailing link lists. The label is short and descriptive — the term, the work, the author — not a sentence. This keeps readers in flow and lets them follow crumbs without leaving the prose.
+
+**Word Repetition**
+Avoid repeating the same word or phrase across nearby sentences unless the repetition is thematic. Recurring motifs and word habits are a deliberate technique — the opening image returning at the end, a term doing extra work because it earned it. Accidental repetition is different: it flattens prose and signals the writer ran out of register. If a word appears three times in a paragraph and the third use isn't carrying a callback, change it.
+
+**Emphasis**
+Reserve **bold** for the load-bearing claim of a passage — the sentence the reader should leave with. Use *italic* for term-introduction, foreign words, or contrast against a surrounding clause. Don't decorate. If everything is emphasized, nothing is.
 
 **Anti-Patterns:**
 

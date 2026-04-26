@@ -20,14 +20,14 @@ All artifact filenames and paths are defined here. Other sections refer to them 
 
 Some artifacts are rendered from a YAML template on create. Each such artifact has a matching `references/<artifact>.yaml` with this shape:
 
-~~~yaml
-rules: []          # cross-cutting procedural guidance (list of strings; may be empty)
-sections:          # ordered, non-empty
-  - heading: ...   # rendered as `## {heading}` in the entry file
-    description: ...  # rendered inside `[...]` as the user-facing purpose placeholder
-    instructions:      # list of strings, consulted when filling/revising; never written to the entry
+```yaml
+rules: [] # cross-cutting procedural guidance (list of strings; may be empty)
+sections: # ordered, non-empty
+  - heading: ... # rendered as `## {heading}` in the entry file
+    description: ... # rendered inside `[...]` as the user-facing purpose placeholder
+    instructions: # list of strings, consulted when filling/revising; never written to the entry
       - ...
-~~~
+```
 
 For every rendered artifact:
 
@@ -158,6 +158,7 @@ Prompt "What would you like to revise or explore?" → Append to research.md in 
 
 - Show current draft excerpt
 - Prompt: "What would you like to revise or add?"
+- Before editing the target passage, read the paragraphs immediately before and after it. Revisions must preserve the flow — sentence rhythm, motif callbacks, the argument's local arc — not just satisfy the request in isolation.
 - User responds → Skill updates draft.md
 
 **Integrate Research → Draft:**
@@ -177,12 +178,16 @@ Prompt "What would you like to revise or explore?" → Append to research.md in 
 
 **Promote:**
 
-- Check H1 in draft.md
-  - If missing or equals `Untitled entry`: Show draft, prompt "What's your entry title?", user provides, skill updates draft.md with H1, continue (keep user in flow, don't abort)
-  - Otherwise: Continue
-- Validate content present (title + body)
-  - If only title, no body: Show draft, offer to add content now before promoting
-- Extract title, create slug, copy to `entries/drafts/{title}.md`
+Run the gate in order. Each step surfaces issues and offers an inline fix path; none hard-block. The user can always override and continue.
+
+- **Title check.** Read H1 in draft.md.
+  - If missing or equals `Untitled entry`: Show draft, prompt "What's your entry title?", user provides, skill updates draft.md with H1, continue.
+  - Otherwise: Continue.
+- **Content check.** Validate title + body present.
+  - If only title, no body: Show draft, offer to add content now before promoting.
+- **URL validation.** Extract every markdown link from draft.md. For each, issue a HEAD request (fall back to GET if the host rejects HEAD). Surface any link that returns a non-2xx/3xx status, times out, or fails DNS, with the label and URL. Prompt the user: fix inline, drop the link, or proceed anyway. Never auto-rewrite a URL.
+- **Citation coverage.** Read research.md if it exists. Cross-reference Observations and Sources & Links against inline links in draft.md. Flag any draft passage that reads as sourced (a quote, a specific claim, a named work) but carries no inline link, and any research observation whose finding appears in the draft without its source attached. Surface as a list. Prompt the user: link inline via Revise Draft, mark the claim as direct experience, or proceed anyway.
+- **Promotion.** Extract title, create slug, copy to `entries/drafts/{title}.md`.
 - Show: "✔ Promoted to entries/drafts/{title}.md"
 
 ## Implementation Notes
@@ -197,4 +202,3 @@ Prompt "What would you like to revise or explore?" → Append to research.md in 
 **Don't auto-capture.** A follow-up that reads like reflection, a question, or pushback ("hmm, maybe the real tension is…", "is this actually the same as X?") is a discuss turn — not a revise instruction. When in doubt, stay in chat and ask before writing. Capture only on explicit confirmation.
 
 **Error recovery:** All errors are recoverable. Show the problem clearly, show what's needed, offer immediate fix path inline. No abort — continue workflow to keep user in flow.
-
