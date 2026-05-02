@@ -1,0 +1,10 @@
+{
+  "name": "rules-loader",
+  "version": "1.0.0",
+  "dependencies": {
+    "picomatch": "^4.0.2"
+  },
+  "pi": {
+    "extensions": ["./index.ts"]
+  }
+}
