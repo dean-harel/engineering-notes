@@ -35,14 +35,28 @@ function parseFrontmatter(text: string): {
   const frontmatter: Record<string, unknown> = {};
 
   for (const line of raw.split("\n")) {
+    const trimmed = line.trim();
+
+    // Array item — e.g. `  - entries/drafts/**`
+    if (trimmed.startsWith("- ")) {
+      const item = trimmed.slice(2).trim();
+      if (!Array.isArray(frontmatter["paths"])) {
+        frontmatter["paths"] = [];
+      }
+      (frontmatter["paths"] as string[]).push(item);
+      continue;
+    }
+
     const colonIndex = line.indexOf(":");
     if (colonIndex === -1) continue;
     const key = line.slice(0, colonIndex).trim();
     const value = line.slice(colonIndex + 1).trim();
 
     if (key === "paths" && value === "") {
-      // Multi-line array after `paths:`
-      frontmatter[key] = [];
+      // Multi-line array after `paths:` — ensure array exists
+      if (!Array.isArray(frontmatter["paths"])) {
+        frontmatter[key] = [];
+      }
     } else if (key === "paths" && value.startsWith("[") && value.endsWith("]")) {
       // Inline array: `["foo", "bar"]`
       try {
@@ -50,13 +64,6 @@ function parseFrontmatter(text: string): {
       } catch {
         frontmatter[key] = [value];
       }
-    } else if (key.startsWith("- ")) {
-      // Array item under `paths:`
-      const item = key.slice(2).trim();
-      if (!Array.isArray(frontmatter["paths"])) {
-        frontmatter["paths"] = [];
-      }
-      (frontmatter["paths"] as string[]).push(item);
     } else if (key === "paths") {
       frontmatter[key] = [value];
     } else {
