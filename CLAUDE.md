@@ -16,7 +16,7 @@ See `entries/drafts/README.md` for the contribution workflow.
 
 - Sentence case for titles (e.g., "Learning new topics faster with AI")
 - Conversational tone, 2-5 min read
-- See `.claude/rules/voice.md` for writing voice guidelines (auto-loaded when editing entries)
+- See `.agents/rules/voice.md` for writing voice guidelines (auto-loaded when editing entries)
 
 ## entry.yml
 
